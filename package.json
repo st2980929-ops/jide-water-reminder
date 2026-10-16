@@ -11,28 +11,35 @@
     "test": "tsx --test tests/*.test.ts",
     "ios:sync": "npm run build && cap sync ios",
     "ios:open": "cap open ios",
-    "sounds:render": "tsx scripts/render-sounds.ts"
+    "sounds:render": "tsx scripts/render-sounds.ts",
+    "icon:render": "tsx scripts/render-icon.tsx",
+    "test:native": "bash scripts/test-native.sh",
+    "verify:ios": "python3 scripts/verify-ios-project.py"
   },
   "dependencies": {
-    "lucide-react": "^0.546.0",
-    "react": "^19.0.1",
-    "react-dom": "^19.0.1",
-    "motion": "^12.23.24",
     "@capacitor/core": "8.5.3",
-    "@capacitor/ios": "8.5.3"
+    "@capacitor/ios": "8.5.3",
+    "lucide-react": "^0.546.0",
+    "motion": "^12.23.24",
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.5.3",
+    "@resvg/resvg-js": "^2.6.2",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^22.14.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "node-web-audio-api": "^2.1.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.21.0",
     "typescript": "^7.0.2",
-    "@capacitor/cli": "8.5.3",
-    "@vitejs/plugin-react": "^6.1.1",
-    "@tailwindcss/vite": "^4.3.3",
-    "vite": "^8.3.0",
-    "node-web-audio-api": "^2.1.0"
+    "vite": "^8.3.0"
   },
-  "description": "A quiet, offline iPhone water reminder with native local notifications."
+  "description": "A quiet, offline iPhone water reminder with native local notifications.",
+  "engines": {
+    "node": ">=22.12.0"
+  }
 }
