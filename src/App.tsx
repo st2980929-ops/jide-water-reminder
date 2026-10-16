@@ -1,361 +1,367 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
+import React, { useEffect, useRef, useState } from "react";
+import type { ReminderConfig } from "./types/reminder";
+import { Step1Schedule } from "./components/prototype/Step1Schedule";
+import { Step2Sound } from "./components/prototype/Step2Sound";
+import { HomeScreen } from "./components/prototype/HomeScreen";
+import { Sun, Moon, X } from "lucide-react";
+import { getThemeTokens } from "./utils/theme";
+import { compilePlan, dateKey } from "./native/plan";
+import {
+  isIPhoneApp,
+  notifications,
+  type NativeStatus,
+} from "./native/notifications";
 
-import React, { useState, useEffect } from 'react';
-import { ReminderConfig, HomeDisplayState } from './types/reminder';
-import { IPhoneFrame } from './components/phone/IPhoneFrame';
-import { Step1Schedule } from './components/prototype/Step1Schedule';
-import { Step2Sound } from './components/prototype/Step2Sound';
-import { HomeScreen } from './components/prototype/HomeScreen';
-import { NotificationBanner } from './components/prototype/NotificationBanner';
-import { LogoSketches, CupWaterlineSVG } from './components/logo/LogoSketches';
-import { DesignSystemPanel } from './components/design-system/DesignSystemPanel';
-import { StateReviewBar } from './components/prototype/StateReviewBar';
-import { Smartphone, Sparkles, Layers, Sun, Moon } from 'lucide-react';
-import { getThemeTokens } from './utils/theme';
-
-import { playDrinkWaterSound } from './utils/audio';
-
-const STORAGE_KEY = 'water_reminder_config_v1';
-
+const STORAGE_KEY = "water_reminder_config_v2";
 const DEFAULT_CONFIG: ReminderConfig = {
-  mode: 'workday',
-  startTime: '09:00',
-  endTime: '18:00',
+  mode: "workday",
+  startTime: "09:00",
+  endTime: "18:00",
   intervalMinutes: 60,
   hasLunchBreak: true,
-  lunchStart: '12:00',
-  lunchEnd: '13:30',
-  workdays: [1, 2, 3, 4, 5], // 周一至周五
-  specificDates: ['2026-10-16', '2026-10-17', '2026-10-18', '2026-10-19'],
-  sound: 'celesta',
-  loudness: 'soft',
-  notificationPermission: 'granted',
+  lunchStart: "12:00",
+  lunchEnd: "13:30",
+  workdays: [1, 2, 3, 4, 5],
+  specificDates: [dateKey(new Date())],
+  sound: "celesta",
+  loudness: "soft",
+  notificationPermission: "prompt",
   isPausedToday: false,
-  hasCompletedSetup: false, // 首次打开展示第 1 步
-  remainingGlasses: 6,      // 默认剩余 6 杯
-  totalDailyGlasses: 8,     // 目标 8 杯 (对应 75% 水位)
+  hasCompletedSetup: false,
+  remainingGlasses: 8,
+  totalDailyGlasses: 8,
   snoozeUntilTime: null,
-  lastDrinkTime: '13:30',
+  lastDrinkTime: null,
+  drinkDate: dateKey(new Date()),
 };
-
+function readLocal(): ReminderConfig {
+  try {
+    const value = {
+      ...DEFAULT_CONFIG,
+      ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"),
+    };
+    compilePlan({ ...value, mode: "everyday" }); // Validate the persisted basic schedule before displaying it.
+    if (!Array.isArray(value.workdays) || !Array.isArray(value.specificDates))
+      return { ...DEFAULT_CONFIG };
+    return {
+      ...value,
+      remainingGlasses: Number.isFinite(value.remainingGlasses)
+        ? Math.max(0, Math.min(8, value.remainingGlasses))
+        : 8,
+      totalDailyGlasses: 8,
+    };
+  } catch {
+    return { ...DEFAULT_CONFIG };
+  }
+}
+function resetDay(value: ReminderConfig): ReminderConfig {
+  return value.drinkDate === dateKey(new Date())
+    ? value
+    : {
+        ...value,
+        drinkDate: dateKey(new Date()),
+        remainingGlasses: value.totalDailyGlasses,
+        lastDrinkTime: null,
+      };
+}
 export default function App() {
-  // Navigation tabs for the design & review workbench
-  const [activeTab, setActiveTab] = useState<'prototype' | 'logo' | 'design_system'>('prototype');
-
-  // App screen inside the iPhone prototype: 'step1' | 'step2' | 'home'
-  const [currentScreen, setCurrentScreen] = useState<'step1' | 'step2' | 'home'>('step1');
-
-  // Device & theme settings (深浅色模式)
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [forcedState, setForcedState] = useState<HomeDisplayState | null>(null);
-
-  // Simulated notification banner state
-  const [showNotification, setShowNotification] = useState(false);
-
-  const t = getThemeTokens(isDarkMode);
-
-  // Persistent user configuration
-  const [config, setConfig] = useState<ReminderConfig>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        return { ...DEFAULT_CONFIG, ...JSON.parse(saved) };
-      }
-    } catch (e) {
-      console.warn('Failed to load saved config', e);
-    }
-    return DEFAULT_CONFIG;
-  });
-
-  // Sync to local storage
+  const [config, setConfig] = useState<ReminderConfig>(() => ({
+    ...resetDay(readLocal()),
+    notificationPermission: "prompt" as const,
+  }));
+  const [draft, setDraft] = useState(config);
+  const [screen, setScreen] = useState<"step1" | "step2" | "home">(
+    config.hasCompletedSetup ? "home" : "step1",
+  );
+  const [status, setStatus] = useState<NativeStatus | null>(null);
+  const [ready, setReady] = useState(!isIPhoneApp),
+    [busy, setBusy] = useState(false),
+    [message, setMessage] = useState("");
+  const [dark, setDark] = useState(
+    () => window.matchMedia("(prefers-color-scheme: dark)").matches,
+  );
+  const generation = useRef(0);
+  const operation = useRef(false),
+    t = getThemeTokens(dark);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [screen, message]);
+  const applyStatus = (value: NativeStatus) => {
+    setStatus(value);
+    setConfig((previous) =>
+      resetDay({
+        ...previous,
+        notificationPermission: value.permission,
+        isPausedToday: value.paused,
+      }),
+    );
+    setDraft((previous) => ({
+      ...previous,
+      notificationPermission: value.permission,
+      isPausedToday: value.paused,
+    }));
+  };
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-    } catch (e) {
-      console.warn('Failed to save config', e);
+    } catch {
+      setMessage("手机存储不可用，饮水记录暂时无法保存。");
     }
   }, [config]);
-
-  // If already completed setup on initial load, show home screen
   useEffect(() => {
-    if (config.hasCompletedSetup) {
-      setCurrentScreen('home');
-    }
+    if (isIPhoneApp) void notifications.setAppearance(dark).catch(() => {});
+    document.documentElement.style.colorScheme = dark ? "dark" : "light";
+    document.documentElement.style.backgroundColor = t.background;
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", t.background);
+  }, [dark, t.background]);
+  useEffect(() => {
+    let alive = true;
+    const refresh = async (initial = false) => {
+      if (operation.current) return;
+      if (!isIPhoneApp) {
+        setConfig(resetDay);
+        return;
+      }
+      const startedAt = generation.current;
+      try {
+        const value = await notifications.status();
+        if (!alive || operation.current || startedAt !== generation.current)
+          return;
+        if (initial && value.hasPlan) {
+          const saved = JSON.parse(value.configuration) as ReminderConfig;
+          const local = resetDay(readLocal());
+          const loaded = {
+            ...DEFAULT_CONFIG,
+            ...saved,
+            remainingGlasses: local.remainingGlasses,
+            lastDrinkTime: local.lastDrinkTime,
+            drinkDate: local.drinkDate,
+            hasCompletedSetup: true,
+            notificationPermission: value.permission,
+            isPausedToday: value.paused,
+          };
+          setConfig(loaded);
+          setDraft(loaded);
+          setScreen("home");
+          setStatus(value);
+        } else {
+          applyStatus(value);
+          if (initial && !value.hasPlan) {
+            setScreen("step1");
+            setConfig((p) => ({ ...p, hasCompletedSetup: false }));
+          }
+        }
+      } catch (error) {
+        if (alive)
+          setMessage(
+            `无法读取系统提醒：${error instanceof Error ? error.message : String(error)}`,
+          );
+      } finally {
+        if (alive) setReady(true);
+      }
+    };
+    void refresh(true);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    const timer = window.setInterval(() => void refresh(), 30000);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
-
-  const currentWaterLevel = Math.round((config.remainingGlasses / config.totalDailyGlasses) * 100);
-
-  const handleDrinkGlass = () => {
-    playDrinkWaterSound();
-    setConfig((prev) => ({
-      ...prev,
-      remainingGlasses: Math.max(0, prev.remainingGlasses - 1),
-      snoozeUntilTime: null,
-      lastDrinkTime: new Date().toTimeString().slice(0, 5),
-    }));
+  const run = async (work: () => Promise<void>) => {
+    if (operation.current) return;
+    generation.current += 1;
+    operation.current = true;
+    setBusy(true);
+    setMessage("");
+    try {
+      await work();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      operation.current = false;
+      setBusy(false);
+    }
   };
-
-  const handlePostpone10m = () => {
-    const now = new Date();
-    const futureMinutes = now.getHours() * 60 + now.getMinutes() + 10;
-    const h = Math.floor((futureMinutes % (24 * 60)) / 60).toString().padStart(2, '0');
-    const m = ((futureMinutes % (24 * 60)) % 60).toString().padStart(2, '0');
-    setConfig((prev) => ({
-      ...prev,
-      snoozeUntilTime: `${h}:${m}`,
-    }));
+  const permission = async () => {
+    const current = await notifications.requestPermission();
+    applyStatus(current);
+    if (current.permission !== "granted")
+      throw new Error("请在 iPhone 设置中允许通知，然后再启用提醒。");
+    return current;
   };
-
-  const handleResetGlasses = () => {
-    setConfig((prev) => ({
-      ...prev,
-      remainingGlasses: prev.totalDailyGlasses,
-      snoozeUntilTime: null,
-    }));
+  const save = () =>
+    void run(async () => {
+      const next = {
+        ...draft,
+        hasCompletedSetup: true,
+        isPausedToday: false,
+        notificationPermission: "granted" as const,
+        snoozeUntilTime: null,
+      };
+      const plan = compilePlan(next);
+      await permission();
+      const installed = await notifications.configure(plan);
+      setConfig(resetDay(next));
+      setDraft(next);
+      applyStatus(installed);
+      setScreen("home");
+      setMessage("提醒安排已保存。可以关闭 App，iPhone 会按安排提醒。");
+    });
+  const test = () =>
+    void run(async () => {
+      const plan = compilePlan({ ...draft, mode: "everyday" });
+      await permission();
+      applyStatus(await notifications.test(plan.sound));
+      setMessage("测试提醒将在 10 秒后出现。现在可以锁屏听一听。");
+    });
+  const edit = (page: "step1" | "step2") => {
+    setDraft(config);
+    setScreen(page);
+    setMessage("");
   };
-
-  const handleUpdateConfig = (partial: Partial<ReminderConfig>) => {
-    setConfig((prev) => ({ ...prev, ...partial }));
-  };
-
-  const handleTriggerNotification = () => {
-    setShowNotification(true);
-  };
-
-  const handleRestartOnboarding = () => {
-    setConfig((prev) => ({
-      ...prev,
-      hasCompletedSetup: false,
-      isPausedToday: false,
-    }));
-    setCurrentScreen('step1');
-    setForcedState(null);
-  };
-
   return (
     <div
-      className="min-h-screen transition-colors flex flex-col"
-      style={{
-        backgroundColor: t.background,
-        color: t.textPrimary,
-      }}
+      className="app-shell"
+      style={{ backgroundColor: t.background, color: t.textPrimary }}
     >
-      {/* 顶部主工作台导航条 (3 区结构：品牌 / 视图切换 / 主题模式) */}
-      <header
-        className="sticky top-0 z-40 px-4 sm:px-8 py-3.5 border-b backdrop-blur-md transition-colors"
-        style={{
-          backgroundColor: isDarkMode ? 'rgba(29, 42, 38, 0.92)' : 'rgba(255, 255, 255, 0.92)',
-          borderColor: t.separator,
-        }}
-      >
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          {/* Zone 1: 品牌标题 */}
-          <div className="flex items-center gap-2.5">
-            <div
-              className="w-8 h-8 rounded-xl border flex items-center justify-center shadow-xs transition-colors"
-              style={{
-                backgroundColor: t.surface,
-                borderColor: t.separator,
-              }}
-            >
-              <CupWaterlineSVG
-                size={20}
-                color={t.accent}
-                waterColor={t.accent}
-                waterLevel={currentWaterLevel}
-                isDarkMode={isDarkMode}
-              />
-            </div>
-            <div>
-              <span
-                className="text-base font-semibold tracking-tight whitespace-nowrap"
-                style={{ color: t.textPrimary }}
-              >
-                喝水提醒
-              </span>
-              <span
-                className="hidden sm:inline-block text-xs ml-2 font-medium"
-                style={{ color: t.textSecondary }}
-              >
-                瓷白 × 深湖青 · 视觉评审样机
-              </span>
-            </div>
-          </div>
-
-          {/* Zone 2: 核心视图切换 (原型体验 / Logo方案 / 视觉系统规范) */}
-          <nav
-            className="flex items-center p-1 rounded-xl border text-xs font-medium"
-            style={{
-              backgroundColor: t.input,
-              borderColor: t.separator,
-            }}
+      <div className="app-content">
+        <div className="flex items-center justify-between px-6 pt-2 min-h-11">
+          <span className="text-xs" style={{ color: t.textSecondary }}>
+            {isIPhoneApp
+              ? "留一点时间，喝口水。"
+              : "网页预览 · 系统通知需安装 iPhone 版"}
+          </span>
+          <button
+            aria-label={dark ? "切换浅色" : "切换深色"}
+            onClick={() => setDark(!dark)}
+            className="w-11 h-11 flex items-center justify-center"
+            style={{ color: t.accent }}
           >
-            <button
-              onClick={() => setActiveTab('prototype')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
-              style={{
-                backgroundColor: activeTab === 'prototype' ? t.surface : 'transparent',
-                color: activeTab === 'prototype' ? t.accent : t.textSecondary,
-                fontWeight: activeTab === 'prototype' ? 600 : 500,
-                boxShadow: activeTab === 'prototype' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
-              }}
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-              <span>iPhone 交互样机</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('logo')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
-              style={{
-                backgroundColor: activeTab === 'logo' ? t.surface : 'transparent',
-                color: activeTab === 'logo' ? t.accent : t.textSecondary,
-                fontWeight: activeTab === 'logo' ? 600 : 500,
-                boxShadow: activeTab === 'logo' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
-              }}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Logo 与小尺寸核查</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('design_system')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
-              style={{
-                backgroundColor: activeTab === 'design_system' ? t.surface : 'transparent',
-                color: activeTab === 'design_system' ? t.accent : t.textSecondary,
-                fontWeight: activeTab === 'design_system' ? 600 : 500,
-                boxShadow: activeTab === 'design_system' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
-              }}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Token 系统与 HIG 规范</span>
-            </button>
-          </nav>
-
-          {/* Zone 3: 深浅色模式切换 */}
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors cursor-pointer"
-              style={{
-                backgroundColor: t.input,
-                borderColor: t.separator,
-                color: t.textPrimary,
-              }}
-              title={isDarkMode ? '切换至浅色模式' : '切换至深色模式'}
-            >
-              {isDarkMode ? (
-                <Sun className="w-3.5 h-3.5 text-amber-400" />
-              ) : (
-                <Moon className="w-3.5 h-3.5" style={{ color: t.accent }} />
-              )}
-              <span className="hidden sm:inline">
-                {isDarkMode ? '浅色' : '深色'}
-              </span>
-            </button>
-          </div>
+            {dark ? <Sun size={19} /> : <Moon size={19} />}
+          </button>
         </div>
-      </header>
-
-      {/* 主工作区 */}
-      <main className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex-1 w-full">
-        {activeTab === 'prototype' && (
-          <div className="space-y-6">
-            {/* 评审专用控制台 */}
-            <StateReviewBar
-              currentForcedState={forcedState}
-              onSelectForcedState={setForcedState}
-              config={config}
-              onUpdateConfig={handleUpdateConfig}
-              onTriggerNotification={handleTriggerNotification}
-              onRestartOnboarding={handleRestartOnboarding}
-              onDrinkGlass={handleDrinkGlass}
-              onResetGlasses={handleResetGlasses}
-              isDarkMode={isDarkMode}
-              onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-              activeScreen={currentScreen}
-              onNavigateScreen={(screen) => {
-                setCurrentScreen(screen);
-                if (screen === 'home') setForcedState(null);
-              }}
-            />
-
-            {/* 手机容器居中渲染 */}
-            <div className="py-2">
-              <IPhoneFrame
-                isDarkMode={isDarkMode}
-                simulatedTime="09:41"
-                onDynamicIslandClick={handleTriggerNotification}
-              >
-                {/* 模拟通知横幅浮层：提供「现在还不渴」与「收到 马上去喝」 */}
-                <NotificationBanner
-                  isOpen={showNotification}
-                  onClose={() => setShowNotification(false)}
-                  onPostpone10m={handlePostpone10m}
-                  onConfirmDrink={handleDrinkGlass}
-                  sound={config.sound}
-                  loudness={config.loudness}
-                  simulatedTime="现在"
-                  isDarkMode={isDarkMode}
-                  waterLevel={currentWaterLevel}
-                />
-
-                {/* 屏幕内容路由 */}
-                {currentScreen === 'step1' && (
-                  <Step1Schedule
-                    config={config}
-                    onChange={handleUpdateConfig}
-                    onNext={() => setCurrentScreen('step2')}
-                    isDarkMode={isDarkMode}
-                  />
-                )}
-
-                {currentScreen === 'step2' && (
-                  <Step2Sound
-                    config={config}
-                    onChange={handleUpdateConfig}
-                    onBack={() => setCurrentScreen('step1')}
-                    onComplete={() => setCurrentScreen('home')}
-                    onTriggerTestNotification={handleTriggerNotification}
-                    isDarkMode={isDarkMode}
-                  />
-                )}
-
-                {currentScreen === 'home' && (
-                  <HomeScreen
-                    config={config}
-                    onEditSchedule={() => setCurrentScreen('step1')}
-                    onEditSound={() => setCurrentScreen('step2')}
-                    onTogglePauseToday={() =>
-                      handleUpdateConfig({ isPausedToday: !config.isPausedToday })
-                    }
-                    onTriggerNotification={handleTriggerNotification}
-                    onDrinkGlass={handleDrinkGlass}
-                    onResetGlasses={handleResetGlasses}
-                    onFixUnauthorized={() =>
-                      handleUpdateConfig({ notificationPermission: 'granted' })
-                    }
-                    forcedState={forcedState}
-                    isDarkMode={isDarkMode}
-                  />
-                )}
-              </IPhoneFrame>
-            </div>
+        {message && (
+          <div
+            role="status"
+            className="mx-6 my-3 p-3 rounded-xl border flex items-start gap-2 text-sm leading-relaxed"
+            style={{ backgroundColor: t.surface, borderColor: t.separator }}
+          >
+            <span className="flex-1">{message}</span>
+            <button
+              aria-label="关闭提示"
+              onClick={() => setMessage("")}
+              className="min-w-11 min-h-11 flex items-center justify-center"
+            >
+              <X size={16} />
+            </button>
           </div>
         )}
-
-        {activeTab === 'logo' && (
-          <LogoSketches />
+        {!ready ? (
+          <p className="p-6 text-sm">正在读取提醒安排…</p>
+        ) : (
+          <fieldset disabled={busy} className="contents">
+            {screen === "step1" && (
+              <Step1Schedule
+                config={draft}
+                onChange={(partial) => setDraft((p) => ({ ...p, ...partial }))}
+                onNext={() => {
+                  try {
+                    compilePlan(draft);
+                    setMessage("");
+                    setScreen("step2");
+                    window.scrollTo(0, 0);
+                  } catch (error) {
+                    setMessage((error as Error).message);
+                    window.scrollTo(0, 0);
+                  }
+                }}
+                isDarkMode={dark}
+              />
+            )}
+            {screen === "step2" && (
+              <Step2Sound
+                config={draft}
+                onChange={(partial) => setDraft((p) => ({ ...p, ...partial }))}
+                onBack={() => setScreen("step1")}
+                onComplete={save}
+                onTriggerTestNotification={test}
+                onOpenSettings={() =>
+                  void run(() => notifications.openSettings())
+                }
+                isDarkMode={dark}
+                busy={busy}
+              />
+            )}
+            {screen === "home" && (
+              <HomeScreen
+                config={config}
+                onEditSchedule={() => edit("step1")}
+                onEditSound={() => edit("step2")}
+                onTogglePauseToday={() =>
+                  void run(async () =>
+                    applyStatus(
+                      await notifications.setPaused(!config.isPausedToday),
+                    ),
+                  )
+                }
+                onTriggerNotification={test}
+                onDrinkGlass={() =>
+                  setConfig((p) => {
+                    const today = resetDay(p);
+                    return {
+                      ...today,
+                      remainingGlasses: Math.max(0, today.remainingGlasses - 1),
+                      lastDrinkTime: new Date().toLocaleTimeString("zh-CN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                      }),
+                    };
+                  })
+                }
+                onFixUnauthorized={() =>
+                  void run(() => notifications.openSettings())
+                }
+                nextReminderAt={status?.nextReminderAt}
+                pendingCount={status?.pendingCount}
+                planHealthy={status?.planHealthy}
+                isDarkMode={dark}
+              />
+            )}
+          </fieldset>
         )}
-
-        {activeTab === 'design_system' && (
-          <DesignSystemPanel />
+        {screen !== "home" && (config.hasCompletedSetup || !isIPhoneApp) && (
+          <div className="px-6 pb-6 text-center">
+            <button
+              onClick={() => {
+                setDraft(config);
+                setScreen("home");
+                setMessage("");
+              }}
+              className="min-h-11 text-sm underline"
+              style={{ color: t.textSecondary }}
+            >
+              {config.hasCompletedSetup
+                ? "取消修改，返回首页"
+                : !isIPhoneApp
+                  ? "预览首页（不会启用通知）"
+                  : ""}
+            </button>
+          </div>
         )}
-      </main>
+        {status && status.permission === "granted" && !status.soundEnabled && (
+          <p className="px-6 pb-5 text-xs" style={{ color: t.textSecondary }}>
+            系统通知声音已关闭，可在 iPhone 设置中开启。
+          </p>
+        )}
+      </div>
     </div>
   );
 }

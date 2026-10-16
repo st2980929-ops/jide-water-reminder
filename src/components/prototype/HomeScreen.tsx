@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ReminderConfig, HomeDisplayState } from '../../types/reminder';
-import { calculateSchedule } from '../../utils/scheduleCalculator';
+import { calculateSchedule, nextReminderLabel } from '../../utils/scheduleCalculator';
 import { CupWaterlineSVG } from '../logo/LogoSketches';
 import { getThemeTokens } from '../../utils/theme';
 import {
@@ -27,6 +27,9 @@ interface HomeScreenProps {
   onFixUnauthorized?: () => void;
   forcedState?: HomeDisplayState | null;
   isDarkMode?: boolean;
+  nextReminderAt?: number | null;
+  pendingCount?: number;
+  planHealthy?: boolean;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
@@ -39,6 +42,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onResetGlasses,
   onFixUnauthorized,
   forcedState,
+  nextReminderAt,
+  pendingCount,
+  planHealthy,
   isDarkMode = false,
 }) => {
   const t = getThemeTokens(isDarkMode);
@@ -46,6 +52,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   // Calculate real schedule state
   const calculation = calculateSchedule(config, undefined, forcedState);
+
+  if (config.notificationPermission==='granted'&&!config.isPausedToday&&nextReminderAt) calculation.nextReminderText=nextReminderLabel(new Date(nextReminderAt));
+  if (config.notificationPermission==='granted'&&!config.isPausedToday&&(pendingCount===0||planHealthy===false)&&calculation.state!=='all_dates_passed') {
+    calculation.state='invalid_schedule'; calculation.statusHeadline='系统提醒需要重新保存'; calculation.nextReminderText='请重新保存提醒安排'; calculation.stateBadgeLabel='需要保存';
+  }
 
   // Water level derived directly from remaining glasses
   const waterLevel = Math.round((config.remainingGlasses / config.totalDailyGlasses) * 100);
@@ -144,6 +155,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
         {/* 核心状态卡片：安静大字标题 + 水位沉降水杯 + 下次提醒 */}
         <div
+          role="button"
+          tabIndex={0}
+          aria-label="记录喝了一杯水"
+          onKeyDown={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();handleCupTap();}}}
           onClick={handleCupTap}
           className="p-6 rounded-3xl border transition-all text-center relative overflow-hidden group cursor-pointer shadow-xs hover:shadow-md"
           style={{
@@ -183,21 +198,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
 
           {/* 1. 当前状态标语 */}
-          <h2
+          <h1
             className="text-[23px] font-semibold tracking-tight leading-snug"
             style={{ color: t.textPrimary }}
           >
             {calculation.statusHeadline}
-          </h2>
+          </h1>
 
           {/* 2. 下一次提醒等宽大字 (映射规则 5: 时间数值用 text-primary) */}
           <div
             className="text-[16px] font-mono font-medium mt-1.5"
             style={{ color: t.textPrimary }}
           >
-            {config.snoozeUntilTime
-              ? `下一次 ${config.snoozeUntilTime} (已推迟 10 分钟)`
-              : calculation.nextReminderText}
+            {calculation.nextReminderText}
           </div>
 
           {/* 3. 当前日程摘要 (映射规则 5: 辅助标签与摘要用 text-secondary) */}
@@ -235,7 +248,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               <span>通知权限已关闭</span>
             </div>
             <p className="text-[11px] leading-normal" style={{ color: t.textSecondary }}>
-              iPhone 必须允许通知权限，应用才能在后台准时响起提示音。当前无法发送任何提醒。
+              请允许通知，并在系统设置中开启声音。实际送达方式受静音、专注模式和通知摘要设置影响。
             </p>
             <button
               type="button"
@@ -262,7 +275,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               <span>时间设置冲突</span>
             </div>
             <p className="text-[11px] leading-normal" style={{ color: t.textSecondary }}>
-              开始时间晚于或等于结束时间，或者午休时间越界。请重新调整时间段。
+              请检查日期、起止时间和休息时段，然后重新保存安排。
             </p>
             <button
               type="button"
@@ -349,11 +362,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <PauseCircle className="w-4 h-4" style={{ color: t.textSecondary }} />
               )}
               <span className="text-[14px] font-medium" style={{ color: t.textPrimary }}>
-                {config.isPausedToday ? '恢复今日提醒' : '今天暂停提醒'}
+                {config.isPausedToday ? '恢复提醒' : '暂停提醒'}
               </span>
             </div>
             <span className="text-xs" style={{ color: t.textSecondary }}>
-              {config.isPausedToday ? '点击恢复' : '明日自动继续'}
+              {config.isPausedToday ? '点击恢复' : '手动恢复'}
             </span>
           </button>
         </div>
@@ -367,14 +380,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           color: t.textSecondary,
         }}
       >
-        <span>安静运行中 · 无打卡负担</span>
+        <span>按日程提醒 · 无打卡负担</span>
         <button
           type="button"
           onClick={onTriggerNotification}
           className="font-medium hover:underline cursor-pointer"
           style={{ color: t.accent }}
         >
-          模拟触发一条通知
+          10 秒后测试通知
         </button>
       </div>
     </div>

@@ -1,20 +1,66 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# 喝水提醒 · iPhone 测试项目
 
-# Run and deploy your AI Studio app
+保留你在 AI Studio 中确定的水杯图标、瓷白 × 深湖青主题和六种提示音，把展示样机改成使用 iOS 本地通知的 App。
 
-This contains everything you need to run your app locally.
+**第一次安装：请先读 [安装到 iPhone](安装到iPhone.md)。** 压缩包已经附带前端构建结果，首次用 Xcode 安装不需要先运行 npm，也不需要 Gemini API Key。
 
-View your app in AI Studio: https://ai.studio/apps/fb5d2c8f-e462-4ca3-94d1-f9ed013c2ceb
+## 目前具备的功能
 
-## Run Locally
+- 每天、每周自选工作日、指定日期三种提醒安排。
+- 起止时间、30/45/60/90/120 分钟间隔、休息时段、跨午夜安排。
+- 六种原有声音，每种提供柔和与清晰两份本地 WAV 文件。
+- 真实系统通知授权、10 秒后测试通知、查看系统中的下次提醒。
+- 长按正式提醒通知，使用「稍后提醒」「暂停提醒」。暂停后可在静默确认通知中恢复，也可以回 App 恢复。
+- 可选的轻触水杯记录和深浅色外观。杯数记录不影响通知，不必每天打卡。
+- 没有账号、服务器或分析埋点。提醒设置保存在本机，不需要日历权限。
 
-**Prerequisites:**  Node.js
+## 必须了解的边界
 
+1. 每天/工作日使用 iOS 重复日历触发器，不依赖每天打开 App，也没有在后台轮询。指定日期使用一次性触发器，全部结束后需要选择新日期。
+2. iOS 待发本地通知有数量限制。本版最多保存 62 条日程规则，另外留出测试和稍后提醒的位置。重复规则可以持续运行；这里的 62 不是只能提醒 62 次。超额安排会阻止保存并说明原因。举例：周一至周五、09:00–18:00、午休 12:00–13:30、每 60 分钟需要 40 条规则；同样时段每 30 分钟需要 75 条，需缩短时段或增加间隔。选一周七天会合并为每天规则，减少占用。
+3. 「暂停提醒」持续到你手动恢复。此版不承诺“明天自动恢复”。暂停状态不会只靠页面变量维持。
+4. 「稍后提醒」保留原日程，补一条约 10 分钟后的提醒；如果原日程在 10 分钟内就有下一条，会直接使用它，避免连续重复。用户主动选择的稍后提醒可能超出原时段。
+5. 柔和/清晰是两份音频本身的响度差异。普通 iOS App 无法拥有独立的系统通知音量滑块；通知仍遵守「铃声和提醒」、静音、专注模式和通知摘要设置。App 内试听使用媒体音量，实际效果请用测试通知检查。
+6. 本次已完成前端构建、22 项日程测试、Swift 数据模型测试、通知调度器的 macOS SDK 类型检查、iOS 资源检查与浏览器检查。这台 Mac 尚未安装 Xcode，**没有完成 iOS 目标编译、签名或真机测试**；交付物是待真机验证的源代码工程，不是已签名的 IPA。
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## 开发与更新
+
+需要 Node.js 22.12 或更新版本。终端进入项目根目录后：
+
+```sh
+npm ci
+npm run dev
+```
+
+网页只用于预览布局和声音，不会假装获得 iOS 通知授权。不要把网页“添加到主屏幕”当成这个原生提醒 App 的替代品。
+
+更新前端并同步到 Xcode：
+
+```sh
+npm run lint
+npm test
+npm run test:native
+npm run ios:sync
+npm run verify:ios
+npm run ios:open
+```
+
+重新导出声音或图标（已经预先生成，普通安装无需执行）：
+
+```sh
+npm run sounds:render
+npm run icon:render
+npm run ios:sync
+```
+
+## 目录
+
+- `src/App.tsx`：实际安装版的设置与首页。
+- `src/native/plan.ts`：把时段编译成可由 iOS 保存的日历通知规则。
+- `native/`：Swift 通知调度器、Capacitor 插件、隐私清单和提示音。
+- `ios/App/App.xcodeproj`：直接用 Xcode 打开的工程，依赖通过 Swift Package Manager 下载。
+- `ios/App/App/public/`：随交付附带的静态页面与资源；运行 `ios:sync` 可重新生成。
+- `src/components/logo/`、`design-system/`、`phone/` 和评审组件：保留的原始设计素材与参考组件；安装版入口不加载评审工作台。
+- `tests/`、`scripts/`：日程测试、导出与资源完整性检查。
+
+架构与验证记录见 [IMPLEMENTATION.md](IMPLEMENTATION.md)。

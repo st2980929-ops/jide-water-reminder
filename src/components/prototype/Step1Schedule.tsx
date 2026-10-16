@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ReminderConfig } from '../../types/reminder';
 import { generateNaturalSummary, formatTimeMinutes } from '../../utils/scheduleCalculator';
 import { Calendar as CalendarIcon, Clock, Coffee, AlertCircle, ArrowRight, Check } from 'lucide-react';
+import { dateKey } from '../../native/plan';
 import { getThemeTokens } from '../../utils/theme';
 
 interface Step1ScheduleProps {
@@ -41,16 +42,16 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
   // Time validation
   const startMins = formatTimeMinutes(config.startTime);
   const endMins = formatTimeMinutes(config.endTime);
-  const isOvernight = endMins <= startMins;
+  const isOvernight = endMins < startMins;
 
   const lunchStartMins = formatTimeMinutes(config.lunchStart);
   const lunchEndMins = formatTimeMinutes(config.lunchEnd);
-  const isLunchInvalid = config.hasLunchBreak && lunchStartMins >= lunchEndMins;
+  const isLunchInvalid = config.hasLunchBreak && lunchStartMins === lunchEndMins;
 
   const isWorkdayEmpty = config.mode === 'workday' && config.workdays.length === 0;
   const isDatesEmpty = config.mode === 'specific_dates' && config.specificDates.length === 0;
 
-  const hasValidationError = isLunchInvalid || isWorkdayEmpty || isDatesEmpty;
+  const hasValidationError = startMins === endMins || isLunchInvalid || isWorkdayEmpty || isDatesEmpty;
 
   const toggleWeekday = (day: number) => {
     let newDays = [...config.workdays];
@@ -63,7 +64,7 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
   };
 
   // Generate multi-date picker dates for current month + offset
-  const today = new Date(2026, 9, 16); // Local anchor date 2026-10-16
+  const today = new Date();
   const targetMonth = new Date(today.getFullYear(), today.getMonth() + calendarMonthOffset, 1);
   const year = targetMonth.getFullYear();
   const month = targetMonth.getMonth();
@@ -121,9 +122,9 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
 
           <div className="space-y-2">
             {/* 模式 1：每天 */}
-            <div
+            <button type="button" aria-pressed={config.mode === 'everyday'}
               onClick={() => onChange({ mode: 'everyday' })}
-              className="p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between min-h-[52px]"
+              className="w-full text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between min-h-[52px]"
               style={{
                 backgroundColor: config.mode === 'everyday' ? t.selectedSoft : t.surface,
                 borderColor: config.mode === 'everyday' ? t.accent : t.separator,
@@ -153,12 +154,12 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
               >
                 {config.mode === 'everyday' && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
               </div>
-            </div>
+            </button>
 
             {/* 模式 2：工作安排 */}
-            <div
+            <button type="button" aria-pressed={config.mode === 'workday'}
               onClick={() => onChange({ mode: 'workday' })}
-              className="p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between min-h-[52px]"
+              className="w-full text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between min-h-[52px]"
               style={{
                 backgroundColor: config.mode === 'workday' ? t.selectedSoft : t.surface,
                 borderColor: config.mode === 'workday' ? t.accent : t.separator,
@@ -175,7 +176,7 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
                   className="text-[12px] mt-0.5"
                   style={{ color: t.textSecondary }}
                 >
-                  自选每周工作日与上下班时段，周末不打扰
+                  自选每周工作日，按你的作息安排提醒
                 </div>
               </div>
               <div
@@ -188,12 +189,12 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
               >
                 {config.mode === 'workday' && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
               </div>
-            </div>
+            </button>
 
             {/* 模式 3：指定真实日期 */}
-            <div
+            <button type="button" aria-pressed={config.mode === 'specific_dates'}
               onClick={() => onChange({ mode: 'specific_dates' })}
-              className="p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between min-h-[52px]"
+              className="w-full text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between min-h-[52px]"
               style={{
                 backgroundColor: config.mode === 'specific_dates' ? t.selectedSoft : t.surface,
                 borderColor: config.mode === 'specific_dates' ? t.accent : t.separator,
@@ -223,7 +224,7 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
               >
                 {config.mode === 'specific_dates' && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
               </div>
-            </div>
+            </button>
           </div>
         </div>
 
@@ -259,6 +260,8 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
                   <button
                     key={w.day}
                     type="button"
+                    aria-pressed={config.workdays.includes(w.day)}
+                    aria-label={`周${w.label}`}
                     onClick={() => toggleWeekday(w.day)}
                     className="h-11 rounded-xl text-xs font-semibold transition-all flex items-center justify-center cursor-pointer"
                     style={{
@@ -347,8 +350,11 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
                   <button
                     key={dateStr}
                     type="button"
+                    aria-label={dateStr}
+                    aria-pressed={isSelected}
+                    disabled={dateStr<dateKey(today)}
                     onClick={() => toggleDate(dateStr)}
-                    className="h-9 rounded-lg text-xs font-mono font-medium transition-colors flex items-center justify-center cursor-pointer"
+                    className="h-11 disabled:opacity-30 rounded-lg text-xs font-mono font-medium transition-colors flex items-center justify-center cursor-pointer"
                     style={{
                       backgroundColor: isSelected ? t.accent : 'transparent',
                       color: isSelected ? t.onAccent : t.textPrimary,
@@ -369,11 +375,7 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
                 type="button"
                 onClick={() =>
                   onChange({
-                    specificDates: [
-                      `${year}-${String(month + 1).padStart(2, '0')}-16`,
-                      `${year}-${String(month + 1).padStart(2, '0')}-17`,
-                      `${year}-${String(month + 1).padStart(2, '0')}-18`,
-                    ],
+                    specificDates: [0,1,2].map(offset=>dateKey(new Date(today.getFullYear(),today.getMonth(),today.getDate()+offset))),
                   })
                 }
                 className="hover:underline font-medium cursor-pointer"
@@ -436,6 +438,7 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
                   <Clock className="w-3.5 h-3.5 shrink-0" style={{ color: t.textSecondary }} />
                   <input
                     type="time"
+                    aria-label="开始时间"
                     value={config.startTime}
                     onChange={(e) => onChange({ startTime: e.target.value })}
                     className="w-full bg-transparent text-sm font-mono font-medium outline-hidden"
@@ -461,6 +464,7 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
                   <Clock className="w-3.5 h-3.5 shrink-0" style={{ color: t.textSecondary }} />
                   <input
                     type="time"
+                    aria-label="结束时间"
                     value={config.endTime}
                     onChange={(e) => onChange({ endTime: e.target.value })}
                     className="w-full bg-transparent text-sm font-mono font-medium outline-hidden"
@@ -469,6 +473,8 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
                 </div>
               </div>
             </div>
+
+            {startMins === endMins && <p className="text-xs" style={{color:t.warning}}>开始和结束时间不能相同。</p>}
 
             {/* 提醒间隔单选按钮组 (映射规则 3: 强选中 accent + on-accent；其他 input + text-secondary) */}
             <div>
@@ -485,8 +491,9 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
                     <button
                       key={opt.value}
                       type="button"
+                      aria-pressed={isSelected}
                       onClick={() => onChange({ intervalMinutes: opt.value })}
-                      className="h-9 rounded-xl text-xs font-medium font-mono transition-all flex items-center justify-center cursor-pointer"
+                      className="h-11 rounded-xl text-xs font-medium font-mono transition-all flex items-center justify-center cursor-pointer"
                       style={{
                         backgroundColor: isSelected ? t.accent : t.input,
                         color: isSelected ? t.onAccent : t.textSecondary,
@@ -556,6 +563,7 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
                     </span>
                     <input
                       type="time"
+                      aria-label="休息开始"
                       value={config.lunchStart}
                       onChange={(e) => onChange({ lunchStart: e.target.value })}
                       className="w-full h-10 px-3 rounded-xl border text-xs font-mono font-medium outline-hidden"
@@ -576,6 +584,7 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
                     </span>
                     <input
                       type="time"
+                      aria-label="休息结束"
                       value={config.lunchEnd}
                       onChange={(e) => onChange({ lunchEnd: e.target.value })}
                       className="w-full h-10 px-3 rounded-xl border text-xs font-mono font-medium outline-hidden"
@@ -595,7 +604,7 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
                   style={{ color: t.error }}
                 >
                   <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  午休开始时间不能晚于或等于结束时间
+                  休息开始和结束时间不能相同
                 </p>
               )}
             </div>

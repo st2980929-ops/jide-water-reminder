@@ -33,10 +33,10 @@ export function stopCurrentSound() {
  * 2. bamboo  (空灵竹韵): 带有自然管腔空气感的温润竹音，悠远沉静，取代干燥敲击
  * 3. chime   (短风铃): 清澈双音微风铃
  */
-export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'clear') {
+export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'clear', context?: BaseAudioContext) {
   try {
-    const ctx = getAudioContext();
-    stopCurrentSound();
+    const ctx = context ?? getAudioContext();
+    if (!context) stopCurrentSound();
 
     const gainFactor = loudness === 'soft' ? 0.35 : 0.75;
     const now = ctx.currentTime;
@@ -274,6 +274,7 @@ export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'cl
       currentSourceNodes = [osc1, osc2];
     }
   } catch (e) {
+    if (context) throw e;
     console.warn('Audio playback error', e);
   }
 }

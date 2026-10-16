@@ -23,12 +23,13 @@ export interface ReminderConfig {
   sound: SoundType;
   loudness: LoudnessLevel;
   notificationPermission: 'granted' | 'denied' | 'prompt';
-  isPausedToday: boolean;
+  isPausedToday: boolean; // Legacy key: persistent pause until the user resumes.
   pausedUntilDate?: string;
   hasCompletedSetup: boolean;
   remainingGlasses: number;    // 今日剩余未喝杯数
   totalDailyGlasses: number;   // 今日总目标杯数（默认8杯）
   snoozeUntilTime: string | null; // 暂缓提醒时间（点「现在还不渴」后10分钟）
+  drinkDate?: string; // Local date of optional cup records.
   lastDrinkTime: string | null;   // 上次喝水时间
 }
 
