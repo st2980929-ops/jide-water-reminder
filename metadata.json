@@ -1,0 +1,7 @@
+{
+  "name": "喝水提醒",
+  "description": "面向忙碌人群的轻量 iPhone 喝水提醒 App：包含原创水杯 Logo 提案、设计规范体系与完整状态交互样机。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
