@@ -24,7 +24,7 @@ Sound settings use native select fields and one explicit preview button. The dia
 
 New one-off tests, snoozes and confirmation/error notifications use absolute Gregorian UTC calendar components. Reading an interval trigger's nextTriggerDate produces a date relative to each query, so using it as an absolute pending deadline made the test countdown drift. The fixed calendar deadline is covered by the native trigger regression check.
 
-The user's prior built app contains all twelve byte-identical, non-silent, supported PCM WAV files. No deterministic sound-selection/format defect has been found. The user reports Silent/Focus off, Sounds allowed, alert volume normal, and soft sound selected. The physical vibration-only symptom remains unresolved until custom versus system-default lock-screen tests are heard; this update does not claim it is fixed. Desktop dynamic icons and WidgetKit are deferred.
+The user's prior built app contains all twelve byte-identical, non-silent, supported PCM WAV files. No deterministic sound-selection/format defect has been found. The user reports Silent/Focus off, Sounds allowed, alert volume normal, and soft sound selected. The user subsequently confirmed the sound plays but is too quiet during video playback; see the 0.1.3 audio update below. Desktop dynamic icons and WidgetKit are deferred.
 
 ## Native actions and lifecycle
 
@@ -44,7 +44,7 @@ Snooze adds an extra request approximately ten minutes later without shifting al
 ## Validation completed on this Mac
 
 - `npm run lint`: TypeScript check passed.
-- `npm test`: 24 schedule/UI regression tests passed. Coverage includes workday selection, breaks overlapping overnight boundaries, month/year rollover, local timezone dates, DST gaps and the 62/63 boundary.
+- `npm test`: schedule/UI and offline audio regression tests passed. Coverage includes workday selection, breaks overlapping overnight boundaries, month/year rollover, local timezone dates, DST gaps and the 62/63 boundary.
 - `npm run test:native`: compiled and ran Foundation validation/persistence/capacity/snooze checks plus actual UserNotifications absolute trigger checks.
 - Swift syntax parsing passed for all app-local files.
 - Native scheduler typechecked against the installed macOS UserNotifications SDK, using a temporary check copy omitting only iOS's unavailable-on-macOS `.ephemeral` enum case. This found and fixed a base-trigger API mistake. It is partial validation, not an iOS build.
@@ -57,7 +57,7 @@ Snooze adds an extra request approximately ten minutes later without shifting al
 
 ## Still required
 
-This Mac now has Xcode 27.1. A generic iOS target build with CODE_SIGNING_ALLOWED=NO succeeds, using an isolated DerivedData directory. The earlier macOS typecheck was partial validation from before Xcode was installed. The user installed the prior version on a physical iPhone and receives notifications, but reports vibration without the chosen soft sound. The updated build still requires device listening tests, plus validation of native actions after cold launch, pause/resume and settings changes. Test low power mode, reboot, DST/timezone travel and long-term repeating behavior before release. Free Personal Team signing expires after seven days; it is a development deployment constraint, not a reason to reopen the app daily.
+This Mac now has Xcode 27.1. A generic iOS target build with CODE_SIGNING_ALLOWED=NO succeeds, using an isolated DerivedData directory. The earlier macOS typecheck was partial validation from before Xcode was installed. The user installed the prior version on a physical iPhone and receives notifications, and now confirms the selected soft sound is audible but too quiet during video playback. The updated audio build still requires device listening tests, plus validation of native actions after cold launch, pause/resume and settings changes. Test low power mode, reboot, DST/timezone travel and long-term repeating behavior before release. Free Personal Team signing expires after seven days; it is a development deployment constraint, not a reason to reopen the app daily.
 
 ## Sources
 
@@ -73,3 +73,19 @@ This Mac now has Xcode 27.1. A generic iOS target build with CODE_SIGNING_ALLOWE
 The user chose the display name 记得. Home/header, notification mockups, Info.plist and Capacitor appName now use it. The bundle identifier, target/scheme, persisted storage keys and reminder identifiers are unchanged, preserving the installed app and its local settings. This is a local source update, not an App Store name reservation or release.
 
 Rename verification: the delivered project passed an unsigned generic iOS Release build. The built bundle reports display name 记得, version 0.1.2 build 3 and the unchanged bundle identifier; all twelve sounds and current web resources match the delivery. This is not an App Store distribution validation.
+
+## Reminder audibility update (0.1.3)
+
+Read-only device inspection found version 0.1.1 build 2 installed, with morning_soft.wav saved, sound authorization enabled and eight repeating everyday rules. Original WAVs matched the original offline synthesis sample-for-sample; they were non-silent supported PCM. This rules out a stale synthesis/export mismatch in the inspected project, not every possible device sound issue. The user's confirmation narrows this occurrence to insufficient audibility.
+
+The original exponential envelope decayed rapidly. All six tones now use a gradual 25 ms minimum attack, a stronger sustained body and a longer smooth tail. Frequencies, waveforms and filters remain unchanged. Soft/clear gains remain distinct. The twelve bundle WAVs are re-rendered from the same function used for preview. No system-volume API, critical alert, background playback or audio-session override is added.
+
+For morning_soft.wav, full-file RMS changes from −30.7 to −19.3 dBFS (+11.5 dB); the first-to-last sample span above absolute amplitude 0.01 changes from 0.322 to 1.051 seconds. This threshold is an offline engineering proxy, not a prediction of perceived loudness over a speaker or video. Other tones are balanced to avoid large level differences. All peaks retain headroom; no PCM sample clips. Offline regression tests cover minimum RMS, signal span, finite samples, headroom and clear-vs-soft separation. A legacy wood selection now consistently displays its existing bamboo mapping instead of showing celesta while scheduling bamboo.
+
+Attention Aware can lower alert volume while the user looks at the device (Apple support: https://support.apple.com/zh-cn/102216). Its state was not inspected, so it is a possible contributing system factor, not an established cause. A WebKit AudioSession interruption warning was observed; preview audio and system-rendered UNNotificationSound take different paths, and no causal link to this symptom was established. Queue ID/resource checks do not prove per-notification playback or acoustic loudness. No claim is made that another app suppresses notifications.
+
+Install 0.1.3 over the existing app, save the chosen sound once, and compare a real test notification in the original video-playing context. Do not delete local settings or force system audio/privacy preference changes. Device listening and normal-volume comfort testing remain required before release.
+
+0.1.3 delivery verification: TypeScript and all 73 automatic checks passed; production web build/sync, iOS resource verification and both unsigned and signed generic iOS Release builds passed. All twelve WAVs in the built bundle match regenerated source files, and bundled web assets match the delivery. Browser inspection at 390 × 844 showed no horizontal overflow or observed warning/error logs. Apple reports a non-blocking AppIntents metadata extraction warning because this target does not link AppIntents.
+
+The signed build was installed over the connected user's existing app. A subsequent device app query confirms display name 记得, version 0.1.3, build 4. Read-only own-app preferences confirm semantic preservation of the native plan, selected morning_soft.wav, eight rules and pause state. Acoustic listening while the video plays is still awaiting the user's confirmation.

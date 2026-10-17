@@ -6,7 +6,7 @@ import type {
 } from "../../types/reminder";
 import type { NativeStatus } from "../../native/notifications";
 import { playReminderSound, stopCurrentSound } from "../../utils/audio";
-import { SOUNDS, soundName } from "../../utils/sounds";
+import { SOUNDS, soundName, canonicalSound } from "../../utils/sounds";
 import { Volume2, ArrowLeft } from "lucide-react";
 import { getThemeTokens } from "../../utils/theme";
 interface Props {
@@ -53,7 +53,7 @@ export function Step2Sound({
     0,
     Math.ceil(((status?.testReminderAt ?? 0) - now) / 1000),
   );
-  const selected = SOUNDS.find((s) => s.id === config.sound) ?? SOUNDS[0];
+  const selected = SOUNDS.find((s) => s.id === canonicalSound(config.sound)) ?? SOUNDS[0];
   const preview = () => {
     setPlaying(true);
     playReminderSound(config.sound, config.loudness);
@@ -150,9 +150,15 @@ export function Step2Sound({
             className="w-full min-h-12 px-3 rounded-xl border text-base"
             style={fieldStyle}
           >
-            <option value="soft">柔和 · 轻声一点</option>
+            <option value="soft">柔和 · 温和自然</option>
             <option value="clear">清晰 · 更容易听见</option>
           </select>
+          <p
+            className="text-xs mt-2 leading-relaxed"
+            style={{ color: t.textSecondary }}
+          >
+            安静时选柔和；看视频或周围较吵时，可以试试清晰。
+          </p>
         </div>
         <p
           className="text-xs leading-relaxed"
@@ -184,7 +190,7 @@ export function Step2Sound({
             className="text-xs mt-2 leading-relaxed"
             style={{ color: t.textSecondary }}
           >
-            测试当前选择，不改变已保存的安排。点击后锁屏，等待 10 秒。
+            测试当前选择，不改变已保存的安排。点击后退出本 App，等待 10 秒，也可以回到视频中比较。
           </p>
           <button
             disabled={busy || remaining > 0}
@@ -201,7 +207,7 @@ export function Step2Sound({
               通知没有声音？
             </summary>
             <p className="leading-relaxed mt-1">
-              先测试所选提示音，再测试系统默认音。两次分别锁屏听，便于判断问题在哪一段。
+              先测试所选提示音，再测试系统默认音。两次请用相同场景比较，例如锁屏或播放同一段视频。
             </p>
             {status && (
               <dl className="mt-3 space-y-2 leading-relaxed">

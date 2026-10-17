@@ -58,3 +58,12 @@ test("editing a sound returns to settings and does not claim to enable paused re
   assert.match(html, /返回设置/);
   assert.doesNotMatch(html, /保存并启用提醒/);
 });
+
+test("legacy wood selection displays the bamboo sound that previews and notifications actually use", () => {
+  const html = renderToStaticMarkup(React.createElement(Step2Sound, {
+    config: { ...config, sound: "wood" }, onChange: noop, onBack: noop,
+    onComplete: noop, onTriggerTestNotification: noop, onTestSystemSound: noop, onOpenSettings: noop,
+  }));
+  assert.match(html, /<option value="bamboo" selected="">/);
+  assert.doesNotMatch(html, /<option value="celesta" selected="">/);
+});

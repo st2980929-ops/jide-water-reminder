@@ -1,4 +1,5 @@
 import type { ReminderConfig } from "../types/reminder";
+import { canonicalSound } from "../utils/sounds";
 
 // Leave two of iOS's 64 pending requests available for a test and a snooze.
 export const MAX_PLAN_REQUESTS = 62;
@@ -93,12 +94,7 @@ export function compilePlan(
   if (!SOUNDS.includes(config.sound)) throw new Error("请选择有效的提示音。");
   if (!["soft", "clear"].includes(config.loudness))
     throw new Error("请选择有效的声音版本。");
-  const soundType =
-    config.sound === "drop"
-      ? "celesta"
-      : config.sound === "wood"
-        ? "bamboo"
-        : config.sound;
+  const soundType = canonicalSound(config.sound);
   const requests: ReminderRequest[] = [];
   const add = (fields: Omit<ReminderRequest, "id">) => {
     const key = [

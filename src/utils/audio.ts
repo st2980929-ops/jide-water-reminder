@@ -1,4 +1,5 @@
 import { SoundType, LoudnessLevel } from '../types/reminder';
+import { canonicalSound } from './sounds';
 
 let audioCtx: AudioContext | null = null;
 let currentSourceNodes: { stop?: () => void }[] = [];
@@ -27,6 +28,17 @@ export function stopCurrentSound() {
   currentSourceNodes = [];
 }
 
+// The original exponential tails reached near-silence within a few tenths of a second.
+// Hold enough of the tone to be recognizable without a hard attack or an abrupt cutoff.
+function reminderEnvelope(param: AudioParam, start: number, peak: number, attackEnd: number, end: number) {
+  const attack = Math.max(attackEnd, start + 0.025);
+  param.setValueAtTime(0, start);
+  param.linearRampToValueAtTime(peak, attack);
+  param.exponentialRampToValueAtTime(peak * 0.75, attack + 0.12);
+  param.exponentialRampToValueAtTime(peak * 0.14, end - 0.10);
+  param.linearRampToValueAtTime(0, end);
+}
+
 /**
  * 提醒提示音播放：
  * 1. celesta (清泉水琴): 纯净空灵的水晶琴鸣，柔和清润，取代生硬单滴
@@ -38,11 +50,14 @@ export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'cl
     const ctx = context ?? getAudioContext();
     if (!context) stopCurrentSound();
 
-    const gainFactor = loudness === 'soft' ? 0.35 : 0.75;
+    const effectiveType = canonicalSound(type);
+    // Compensate the bamboo filter and avoid brighter celesta partials dominating the set.
+    const balance = effectiveType === 'bamboo' ? 1.6
+      : effectiveType === 'celesta' ? 0.83
+      : effectiveType === 'singingbowl' ? 0.90
+      : effectiveType === 'morning' ? 1.05 : 1;
+    const gainFactor = (loudness === 'soft' ? 0.56 : 0.86) * balance;
     const now = ctx.currentTime;
-
-    // 映射兼容旧版
-    const effectiveType = type === 'drop' ? 'celesta' : type === 'wood' ? 'bamboo' : type;
 
     if (effectiveType === 'celesta') {
       // 清泉水琴 (Spring Celesta)：双层水琴谐音，如甘泉滴入调音水琴，清澈空灵
@@ -53,9 +68,7 @@ export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'cl
       osc1.frequency.setValueAtTime(1046.5, now);
       osc1.frequency.exponentialRampToValueAtTime(1040, now + 0.35);
 
-      gain1.gain.setValueAtTime(0.001, now);
-      gain1.gain.linearRampToValueAtTime(gainFactor * 0.65, now + 0.012);
-      gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
+      reminderEnvelope(gain1.gain, now, gainFactor * 0.65, now + 0.012, now + 0.94);
 
       // 泛音 G6 (1568Hz) + 微琶音滞后 35ms
       const osc2 = ctx.createOscillator();
@@ -64,9 +77,7 @@ export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'cl
       osc2.frequency.setValueAtTime(1568, now + 0.035);
       osc2.frequency.exponentialRampToValueAtTime(1560, now + 0.4);
 
-      gain2.gain.setValueAtTime(0.001, now + 0.035);
-      gain2.gain.linearRampToValueAtTime(gainFactor * 0.45, now + 0.048);
-      gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.62);
+      reminderEnvelope(gain2.gain, now + 0.035, gainFactor * 0.45, now + 0.048, now + 1.02);
 
       // 空灵高频泛音 E7 (2637Hz)
       const osc3 = ctx.createOscillator();
@@ -74,9 +85,7 @@ export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'cl
       osc3.type = 'sine';
       osc3.frequency.setValueAtTime(2637, now + 0.07);
 
-      gain3.gain.setValueAtTime(0.001, now + 0.07);
-      gain3.gain.linearRampToValueAtTime(gainFactor * 0.18, now + 0.08);
-      gain3.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+      reminderEnvelope(gain3.gain, now + 0.07, gainFactor * 0.18, now + 0.08, now + 0.8);
 
       osc1.connect(gain1);
       gain1.connect(ctx.destination);
@@ -86,11 +95,11 @@ export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'cl
       gain3.connect(ctx.destination);
 
       osc1.start(now);
-      osc1.stop(now + 0.6);
+      osc1.stop(now + 0.965);
       osc2.start(now + 0.035);
-      osc2.stop(now + 0.65);
+      osc2.stop(now + 1.045);
       osc3.start(now + 0.07);
-      osc3.stop(now + 0.5);
+      osc3.stop(now + 0.825);
 
       currentSourceNodes = [osc1, osc2, osc3];
     } else if (effectiveType === 'bamboo') {
@@ -108,9 +117,7 @@ export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'cl
       filter.frequency.setValueAtTime(520, now);
       filter.Q.setValueAtTime(4.5, now);
 
-      gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(gainFactor * 0.8, now + 0.008);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.48);
+      reminderEnvelope(gain.gain, now, gainFactor * 0.8, now + 0.008, now + 0.95);
 
       // 管内空气次级泛音 (784Hz)
       const oscSub = ctx.createOscillator();
@@ -119,9 +126,7 @@ export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'cl
       oscSub.frequency.setValueAtTime(784, now + 0.015);
       oscSub.frequency.exponentialRampToValueAtTime(740, now + 0.28);
 
-      gainSub.gain.setValueAtTime(0.001, now + 0.015);
-      gainSub.gain.linearRampToValueAtTime(gainFactor * 0.35, now + 0.022);
-      gainSub.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+      reminderEnvelope(gainSub.gain, now + 0.015, gainFactor * 0.35, now + 0.022, now + 0.85);
 
       osc.connect(filter);
       filter.connect(gain);
@@ -131,9 +136,9 @@ export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'cl
       gainSub.connect(ctx.destination);
 
       osc.start(now);
-      osc.stop(now + 0.5);
+      osc.stop(now + 0.975);
       oscSub.start(now + 0.015);
-      oscSub.stop(now + 0.4);
+      oscSub.stop(now + 0.875);
 
       currentSourceNodes = [osc, oscSub];
     } else if (effectiveType === 'chime') {
@@ -143,18 +148,14 @@ export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'cl
       osc1.type = 'sine';
       osc1.frequency.setValueAtTime(1318.5, now); // E6
 
-      gain1.gain.setValueAtTime(0.001, now);
-      gain1.gain.linearRampToValueAtTime(gainFactor * 0.45, now + 0.02);
-      gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.65);
+      reminderEnvelope(gain1.gain, now, gainFactor * 0.45, now + 0.02, now + 0.98);
 
       const osc2 = ctx.createOscillator();
       const gain2 = ctx.createGain();
       osc2.type = 'sine';
       osc2.frequency.setValueAtTime(1975.5, now + 0.06); // B6
 
-      gain2.gain.setValueAtTime(0.001, now + 0.06);
-      gain2.gain.linearRampToValueAtTime(gainFactor * 0.38, now + 0.08);
-      gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.75);
+      reminderEnvelope(gain2.gain, now + 0.06, gainFactor * 0.38, now + 0.08, now + 1.08);
 
       osc1.connect(gain1);
       gain1.connect(ctx.destination);
@@ -162,9 +163,9 @@ export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'cl
       gain2.connect(ctx.destination);
 
       osc1.start(now);
-      osc1.stop(now + 0.7);
+      osc1.stop(now + 1.005);
       osc2.start(now + 0.06);
-      osc2.stop(now + 0.8);
+      osc2.stop(now + 1.105);
 
       currentSourceNodes = [osc1, osc2];
     } else if (effectiveType === 'raindrop') {
@@ -176,9 +177,7 @@ export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'cl
       osc.frequency.setValueAtTime(640, now);
       osc.frequency.exponentialRampToValueAtTime(460, now + 0.12);
 
-      gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(gainFactor * 0.7, now + 0.015);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.38);
+      reminderEnvelope(gain.gain, now, gainFactor * 0.7, now + 0.015, now + 0.82);
 
       // 伴生微波泛音
       const osc2 = ctx.createOscillator();
@@ -187,9 +186,7 @@ export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'cl
       osc2.frequency.setValueAtTime(960, now);
       osc2.frequency.exponentialRampToValueAtTime(690, now + 0.08);
 
-      gain2.gain.setValueAtTime(0.001, now);
-      gain2.gain.linearRampToValueAtTime(gainFactor * 0.25, now + 0.012);
-      gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+      reminderEnvelope(gain2.gain, now, gainFactor * 0.25, now + 0.012, now + 0.72);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
@@ -197,23 +194,21 @@ export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'cl
       gain2.connect(ctx.destination);
 
       osc.start(now);
-      osc.stop(now + 0.4);
+      osc.stop(now + 0.845);
       osc2.start(now);
-      osc2.stop(now + 0.25);
+      osc2.stop(now + 0.745);
 
       currentSourceNodes = [osc, osc2];
     } else if (effectiveType === 'singingbowl') {
-      // 静谧铜磬 (Singing Bowl): 432Hz 颂钵沉浸共鸣，舒缓治愈，深沉悠远
+      // 静谧铜磬 (Singing Bowl): 432Hz 颂钵沉浸共鸣，深沉悠远
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(432, now); // A4 (432Hz 疗愈频段)
+      osc.frequency.setValueAtTime(432, now); // A4 (432Hz)
       osc.frequency.linearRampToValueAtTime(430, now + 0.9);
 
-      gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(gainFactor * 0.65, now + 0.03);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.95);
+      reminderEnvelope(gain.gain, now, gainFactor * 0.65, now + 0.03, now + 1.05);
 
       // 次高谐音 864Hz
       const oscH = ctx.createOscillator();
@@ -221,9 +216,7 @@ export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'cl
       oscH.type = 'sine';
       oscH.frequency.setValueAtTime(864, now);
 
-      gainH.gain.setValueAtTime(0.001, now);
-      gainH.gain.linearRampToValueAtTime(gainFactor * 0.25, now + 0.04);
-      gainH.gain.exponentialRampToValueAtTime(0.0001, now + 0.7);
+      reminderEnvelope(gainH.gain, now, gainFactor * 0.25, now + 0.04, now + 0.95);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
@@ -231,9 +224,9 @@ export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'cl
       gainH.connect(ctx.destination);
 
       osc.start(now);
-      osc.stop(now + 1.0);
+      osc.stop(now + 1.075);
       oscH.start(now);
-      oscH.stop(now + 0.75);
+      oscH.stop(now + 0.975);
 
       currentSourceNodes = [osc, oscH];
     } else if (effectiveType === 'morning') {
@@ -243,18 +236,14 @@ export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'cl
       osc1.type = 'triangle';
       osc1.frequency.setValueAtTime(329.6, now); // E4
 
-      gain1.gain.setValueAtTime(0.001, now);
-      gain1.gain.linearRampToValueAtTime(gainFactor * 0.55, now + 0.015);
-      gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
+      reminderEnvelope(gain1.gain, now, gainFactor * 0.55, now + 0.015, now + 1.0);
 
       const osc2 = ctx.createOscillator();
       const gain2 = ctx.createGain();
       osc2.type = 'triangle';
       osc2.frequency.setValueAtTime(415.3, now + 0.04); // G#4
 
-      gain2.gain.setValueAtTime(0.001, now + 0.04);
-      gain2.gain.linearRampToValueAtTime(gainFactor * 0.45, now + 0.055);
-      gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.68);
+      reminderEnvelope(gain2.gain, now + 0.04, gainFactor * 0.45, now + 0.055, now + 1.08);
 
       const filter = ctx.createBiquadFilter();
       filter.type = 'lowpass';
@@ -267,9 +256,9 @@ export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'cl
       filter.connect(ctx.destination);
 
       osc1.start(now);
-      osc1.stop(now + 0.65);
+      osc1.stop(now + 1.025);
       osc2.start(now + 0.04);
-      osc2.stop(now + 0.72);
+      osc2.stop(now + 1.105);
 
       currentSourceNodes = [osc1, osc2];
     }
