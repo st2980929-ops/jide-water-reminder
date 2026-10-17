@@ -2,11 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import type {
   ReminderConfig,
   SoundType,
-  LoudnessLevel,
 } from "../../types/reminder";
-import type { NativeStatus } from "../../native/notifications";
+import { notifications, isIPhoneApp, type NativeStatus } from "../../native/notifications";
 import { playReminderSound, stopCurrentSound } from "../../utils/audio";
-import { SOUNDS, soundName, canonicalSound, soundDuration } from "../../utils/sounds";
+import { SOUNDS, soundName, canonicalSound, soundDuration, getSoundVolume } from "../../utils/sounds";
 import { Volume2, ArrowLeft } from "lucide-react";
 import { getThemeTokens } from "../../utils/theme";
 interface Props {
@@ -43,6 +42,7 @@ export function Step2Sound({
     () => () => {
       previewGeneration.current += 1;
       stopCurrentSound();
+      if (isIPhoneApp) void notifications.stopPreviewSound().catch(() => {});
       window.clearTimeout(timer.current);
     },
     [],
@@ -57,9 +57,11 @@ export function Step2Sound({
     Math.ceil(((status?.testReminderAt ?? 0) - now) / 1000),
   );
   const selected = SOUNDS.find((s) => s.id === canonicalSound(config.sound)) ?? SOUNDS[0];
+  const volume = getSoundVolume(config);
   const stopPreview = () => {
     previewGeneration.current += 1;
     stopCurrentSound();
+    if (isIPhoneApp) void notifications.stopPreviewSound().catch(() => {});
     window.clearTimeout(timer.current);
     setPlaying(false);
   };
@@ -68,7 +70,12 @@ export function Step2Sound({
     setPlaying(true);
     setPreviewError("");
     try {
-      const started = await playReminderSound(config.sound, config.loudness);
+      if (isIPhoneApp) {
+        await notifications.previewSound(`${selected.id}_clear.wav`, volume);
+        if (request === previewGeneration.current) setPlaying(false);
+        return;
+      }
+      const started = await playReminderSound(config.sound, volume);
       if (request !== previewGeneration.current) return;
       if (!started) { setPlaying(false); return; }
       window.clearTimeout(timer.current);
@@ -135,12 +142,12 @@ export function Step2Sound({
             </select>
             <button
               onClick={preview}
-              disabled={playing}
+              disabled={playing || volume === 0}
               className="min-h-12 px-4 rounded-xl border flex items-center gap-1.5 text-sm"
               style={{ ...fieldStyle, color: t.accent }}
             >
               <Volume2 size={17} />
-              {playing ? "播放中" : "试听"}
+              {volume === 0 ? "已静音" : playing ? "播放中" : "试听"}
             </button>
           </div>
           {previewError && <p role="alert" className="text-xs mt-2" style={{ color: t.error }}>{previewError}</p>}
@@ -152,38 +159,46 @@ export function Step2Sound({
           </p>
         </div>
         <div>
-          <label
-            htmlFor="sound-loudness"
-            className="text-xs font-medium block mb-2"
-            style={{ color: t.textSecondary }}
-          >
-            声音版本
-          </label>
-          <select
-            id="sound-loudness"
-            value={config.loudness}
-            onChange={(e) =>
-              onChange({ loudness: e.target.value as LoudnessLevel })
-            }
-            className="w-full min-h-12 px-3 rounded-xl border text-base"
-            style={fieldStyle}
-          >
-            <option value="soft">柔和 · 温和自然</option>
-            <option value="clear">清晰 · 更容易听见</option>
-          </select>
+          <div className="flex justify-between items-center mb-2">
+            <label htmlFor="sound-volume" className="text-xs font-medium" style={{ color: t.textSecondary }}>提示音基础音量</label>
+            <output htmlFor="sound-volume" className="text-sm font-medium tabular-nums" style={{ color: t.accent }}>{volume}%</output>
+          </div>
+          <input
+            id="sound-volume"
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            value={volume}
+            aria-valuetext={`${volume}%${volume === 0 ? "，提示音已关闭" : ""}`}
+            aria-describedby="sound-volume-help"
+            className="sound-volume-slider"
+            style={{
+              "--volume-accent": t.accent,
+              "--volume-surface": t.surface,
+              "--volume-empty": t.separator,
+              "--volume-percent": `${volume}%`,
+            } as React.CSSProperties}
+            onChange={(event) => {
+              stopPreview();
+              setPreviewError("");
+              onChange({ soundVolume: Number(event.target.value) });
+            }}
+          />
+          <div className="flex justify-between text-xs" style={{ color: t.textSecondary }}><span>静音</span><span>最大</span></div>
           <p
+            id="sound-volume-help"
             className="text-xs mt-2 leading-relaxed"
             style={{ color: t.textSecondary }}
           >
-            安静时选柔和；看视频或周围较吵时，可以试试清晰。
+            {volume === 0 ? "保存后关闭提示音，通知仍会显示。" : "调节提示音本身的大小，不改变手机系统音量。"}
           </p>
         </div>
         <p
           className="text-xs leading-relaxed"
           style={{ color: t.textSecondary }}
         >
-          通知跟随 iPhone
-          的「铃声和提醒」音量；这里的试听使用媒体音量。修改后点保存，才会用于日常提醒。
+          试听和通知使用相同的基础大小。试听还受媒体音量影响，通知受 iPhone「铃声和提醒」音量影响。修改后点保存，用于日常提醒。
         </p>
         <button
           disabled={busy}
@@ -239,7 +254,7 @@ export function Step2Sound({
                   <dt className="inline">已保存的提示音：</dt>
                   <dd className="inline">
                     {status.savedSound
-                      ? `${soundName(status.savedSound)} · ${status.savedSound.includes("_clear") ? "清晰" : "柔和"}`
+                      ? `${soundName(status.savedSound)} · ${status.savedVolume ?? (status.savedSound.includes("_soft") ? 65 : 100)}%`
                       : "未保存"}
                   </dd>
                 </div>
@@ -249,7 +264,7 @@ export function Step2Sound({
                     <dd className="inline">
                       {status.soundResourceAvailable
                         ? "完整"
-                        : "缺失，请重新安装"}
+                        : "需要重新保存声音"}
                     </dd>
                   </div>
                 )}

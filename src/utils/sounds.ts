@@ -1,4 +1,4 @@
-import type { SoundType } from "../types/reminder";
+import type { SoundType, ReminderConfig } from "../types/reminder";
 const RETIRED_SOUNDS = new Set(["bamboo", "chime", "brook", "shore", "breeze", "birds", "wood"]);
 export function canonicalSound(id: string): string {
   return id === "drop" || RETIRED_SOUNDS.has(id) ? "celesta" : id;
@@ -13,6 +13,12 @@ export const SOUNDS: { id: SoundType; name: string; desc: string; durationSecond
 ];
 export function soundDuration(id: string): number {
   return SOUNDS.find((sound) => sound.id === canonicalSound(id))?.durationSeconds ?? 1.2;
+}
+export function getSoundVolume(config: Pick<ReminderConfig, "soundVolume" | "loudness">): number {
+  const value = config.soundVolume === undefined ? (config.loudness === "soft" ? 65 : 100) : config.soundVolume;
+  if (!Number.isInteger(value) || value < 0 || value > 100)
+    throw new Error("提示音音量应在 0–100% 之间。");
+  return value;
 }
 export function soundName(id: string) {
   const sound = id.replace(/_(soft|clear)\.wav$/, "");

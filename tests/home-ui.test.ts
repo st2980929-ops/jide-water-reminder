@@ -68,3 +68,14 @@ test("a removed legacy wood selection falls back to the retained water tone", ()
   for (const removed of ["bamboo", "chime", "brook", "shore", "breeze", "birds"])
     assert.doesNotMatch(html, new RegExp(`<option value="${removed}"`));
 });
+
+test("sound controls show a base-volume slider without the old preset picker", () => {
+  const html = renderToStaticMarkup(React.createElement(Step2Sound, {
+    config: { ...config, soundVolume: 45 }, onChange: noop, onBack: noop,
+    onComplete: noop, onTriggerTestNotification: noop, onTestSystemSound: noop, onOpenSettings: noop,
+  }));
+  assert.match(html, /type="range"/);
+  assert.match(html, /aria-valuetext="45%"/);
+  assert.equal((html.match(/<select\b/g) || []).length, 1);
+  assert.doesNotMatch(html, /声音版本/);
+});

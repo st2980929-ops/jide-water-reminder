@@ -3,7 +3,7 @@ import { ArrowLeft, ChevronRight } from "lucide-react";
 import type { ReminderConfig } from "../../types/reminder";
 import { getThemeTokens } from "../../utils/theme";
 import { generateNaturalSummary } from "../../utils/scheduleCalculator";
-import { soundName } from "../../utils/sounds";
+import { soundName, getSoundVolume } from "../../utils/sounds";
 export type Appearance = "system" | "light" | "dark";
 interface Props {
   config: ReminderConfig;
@@ -79,7 +79,7 @@ export function SettingsScreen({
           },
           {
             title: "声音与通知",
-            value: `${soundName(config.sound)} · ${config.loudness === "soft" ? "柔和" : "清晰"}`,
+            value: `${soundName(config.sound)} · ${getSoundVolume(config)}%`,
             action: onEditSound,
           },
         ].map((row) => (

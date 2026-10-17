@@ -251,9 +251,9 @@ export default function App() {
     void run(async () => {
       const plan = compilePlan({ ...draft, mode: "everyday" });
       await permission();
-      applyStatus(await notifications.test(plan.sound, useSystemSound));
+      applyStatus(await notifications.test(plan.sound, useSystemSound, plan.volume ?? 100));
       setMessage(
-        `${useSystemSound ? "系统默认音" : "所选提示音"}将在 10 秒后通过通知播放。现在请锁屏听一听。`,
+        `${useSystemSound ? "系统默认音" : "所选提示音"}将在 10 秒后通过通知播放。可以退出 App，在平常的使用场景中听。`,
       );
     });
   const edit = (page: "step1" | "step2") => {

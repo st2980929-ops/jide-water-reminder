@@ -131,3 +131,14 @@ test("a denied resume is reported as failure to the preview caller", async () =>
     );
   }, new Error("NotAllowedError: resume denied"));
 });
+
+test("an interrupted session that never resumes cannot leave preview waiting forever", async () => {
+  await withSilentAudio("suspended", async (audio, contexts) => {
+    const original = SilentContext.prototype.resume;
+    SilentContext.prototype.resume = function () { return new Promise<void>(() => {}); };
+    try {
+      await assert.rejects(audio.playReminderSound("ceramic", "soft"), /音频.*恢复/);
+      assert.equal(contexts.reduce((sum, context) => sum + context.activeSources, 0), 0);
+    } finally { SilentContext.prototype.resume = original; }
+  });
+});

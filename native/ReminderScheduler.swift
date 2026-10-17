@@ -15,6 +15,8 @@ actor ReminderScheduler {
     private let defaults = UserDefaults.standard
     private let planKey = "water.native.plan.v1"
     private let pausedKey = "water.native.paused.v1"
+    private let testSoundKey = "water.native.test-sound.v1"
+    private let soundStore = ReminderSoundStore.live
     private var busy = false
 
     // Actor methods may reenter while awaiting UNUserNotificationCenter.
@@ -61,21 +63,31 @@ actor ReminderScheduler {
             throw ReminderError.invalid("提示音资源缺失，请重新安装完整 App。")
         }
     }
-    private func content(sound: String) -> UNMutableNotificationContent {
+    private func content(soundName: String?) -> UNMutableNotificationContent {
         let value = UNMutableNotificationContent()
         value.title = "喝口水吧"
         value.body = "忙到这里，也照顾一下自己。"
-        value.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: sound))
+        if let name = soundName { value.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: name)) }
         value.categoryIdentifier = "WATER_REMINDER"
         value.threadIdentifier = "water-reminders"
         return value
     }
-    private func requests(for plan: ReminderPlan) -> [UNNotificationRequest] {
-        plan.requests.compactMap { rule in
+    private func requests(for plan: ReminderPlan) throws -> [UNNotificationRequest] {
+        let prepared = try soundStore.prepare(sound: plan.sound, volume: plan.volume ?? 100)
+        return plan.requests.compactMap { rule in
             let trigger = UNCalendarNotificationTrigger(dateMatching: rule.components, repeats: rule.repeats)
             guard trigger.nextTriggerDate() != nil else { return nil }
-            return UNNotificationRequest(identifier: rule.id, content: content(sound: plan.sound), trigger: trigger)
+            return UNNotificationRequest(identifier: rule.id, content: content(soundName: prepared.name), trigger: trigger)
         }
+    }
+    private func cleanupPreparedSounds() {
+        var names = Set<String>()
+        if let plan = try? storedPlan(), let volume = plan.volume, volume > 0 && volume < 100,
+           let name = try? soundStore.cacheName(sound: plan.sound, volume: volume) {
+            names.insert(name)
+        }
+        if let testName = defaults.string(forKey: testSoundKey) { names.insert(testName) }
+        soundStore.prune(keeping: names)
     }
     private func replace(with requests: [UNNotificationRequest]) async throws {
         let previous = await pending().filter { $0.identifier.hasPrefix("water.") && $0.identifier != "water.test" }
@@ -115,14 +127,16 @@ actor ReminderScheduler {
         let next = all.compactMap { $0.nextFireDate }.min()
         let savedIDs = Set(all.map(\.identifier))
         let healthy = defaults.bool(forKey: pausedKey) || plan.map { value in
-            requests(for: value).allSatisfy { savedIDs.contains($0.identifier) }
+            value.requests.filter { UNCalendarNotificationTrigger(dateMatching: $0.components, repeats: $0.repeats).nextTriggerDate() != nil }
+                .allSatisfy { savedIDs.contains($0.id) } && soundStore.isAvailable(sound: value.sound, volume: value.volume ?? 100)
         } ?? false
         return ["planHealthy": healthy, "permission": permission, "hasPlan": plan != nil,
                 "configuration": plan?.configuration ?? "", "paused": defaults.bool(forKey: pausedKey),
                 "pendingCount": all.count, "nextReminderAt": next.map { $0.timeIntervalSince1970 * 1000 } as Any? ?? NSNull(),
                 "soundEnabled": value.soundSetting == .enabled,
                 "savedSound": plan?.sound ?? "",
-                "soundResourceAvailable": plan.map { Bundle.main.url(forResource: String($0.sound.dropLast(4)), withExtension: "wav") != nil } ?? false,
+                "savedVolume": plan?.displayVolume as Any? ?? NSNull(),
+                "soundResourceAvailable": plan.map { soundStore.isAvailable(sound: $0.sound, volume: $0.volume ?? 100) } ?? false,
                 "testReminderAt": testAt.map { $0.timeIntervalSince1970 * 1000 } as Any? ?? NSNull()]
     }
     func status() async -> [String: Any] {
@@ -133,7 +147,7 @@ actor ReminderScheduler {
                 if let updated = try previous.replacingRetiredSound() {
                     if !defaults.bool(forKey: pausedKey) {
                         try await requirePermission()
-                        try await replace(with: requests(for: updated))
+                        try await replace(with: try requests(for: updated))
                     }
                     defaults.set(try JSONEncoder().encode(updated), forKey: planKey)
                     notice = "原提示音已移除，已改用清泉水琴。提醒时间保持原样。"
@@ -158,11 +172,12 @@ actor ReminderScheduler {
         guard let data = json.data(using: .utf8) else { throw ReminderError.invalid("设置无法读取。") }
         let plan = try JSONDecoder().decode(ReminderPlan.self, from: data)
         try plan.validate(); try verifySound(plan.sound); try await requirePermission()
-        let all = requests(for: plan)
+        let all = try requests(for: plan)
         guard !all.isEmpty else { throw ReminderError.invalid("指定日期已全部结束，请选择未来日期。") }
         try await replace(with: paused ? [] : all)
         defaults.set(try JSONEncoder().encode(plan), forKey: planKey)
         defaults.set(paused, forKey: pausedKey)
+        cleanupPreparedSounds()
         center.removeDeliveredNotifications(withIdentifiers: ["water.paused", "water.action-error"])
         return await snapshot()
     }
@@ -181,7 +196,7 @@ actor ReminderScheduler {
                         trigger: UNCalendarNotificationTrigger(dateMatching: oneOffComponents(at: Date().addingTimeInterval(1)), repeats: false)))
         } else {
             try verifySound(plan.sound); try await requirePermission()
-            let all = requests(for: plan)
+            let all = try requests(for: plan)
             guard !all.isEmpty else { throw ReminderError.invalid("所选日期已结束，请打开 App 添加新日期。") }
             try await replace(with: all)
             defaults.set(false, forKey: pausedKey)
@@ -200,29 +215,36 @@ actor ReminderScheduler {
         let target = snoozeTarget(now: now, nextRegular: next)
         center.removePendingNotificationRequests(withIdentifiers: ["water.snooze"])
         if next != target {
-            try await add(UNNotificationRequest(identifier: "water.snooze", content: content(sound: plan.sound),
+            let prepared = try soundStore.prepare(sound: plan.sound, volume: plan.volume ?? 100)
+            try await add(UNNotificationRequest(identifier: "water.snooze", content: content(soundName: prepared.name),
                 trigger: UNCalendarNotificationTrigger(dateMatching: oneOffComponents(at: target), repeats: false)))
         }
         return await snapshot()
     }
-    func test(sound: String, useSystemSound: Bool = false) async throws -> [String: Any] {
+    func test(sound: String, useSystemSound: Bool = false, volume: Int = 100) async throws -> [String: Any] {
         await acquire(); defer { busy = false }
-        if !useSystemSound { try verifySound(sound) }
+        if !useSystemSound { try verifySound(sound); try ReminderSoundStore.validateVolume(volume) }
         try await requirePermission()
-        guard await settings().soundSetting == .enabled else {
+        let systemSoundEnabled = await settings().soundSetting == .enabled
+        guard (!useSystemSound && volume == 0) || systemSoundEnabled else {
             throw ReminderError.invalid("系统未允许通知发声，请在 iPhone 设置中开启「记得」的声音。")
         }
         if let scheduled = await pending().first(where: { $0.identifier == "water.test" })?.nextFireDate,
            scheduled > Date() {
             throw ReminderError.invalid("已有一条测试等待送达，请听完后再测试，避免覆盖上一条。")
         }
-        let value = content(sound: sound)
+        let prepared: PreparedReminderSound?
+        if useSystemSound { prepared = nil }
+        else { prepared = try soundStore.prepare(sound: sound, volume: volume) }
+        let value = content(soundName: prepared?.name)
         if useSystemSound { value.sound = .default }
         value.title = useSystemSound ? "系统默认音测试" : "所选提示音测试"
         value.body = useSystemSound ? "这条使用 iPhone 默认通知声音。" : "这条使用刚才选择的提示音。"
         value.categoryIdentifier = "" // A sound test never changes the saved plan.
         try await add(UNNotificationRequest(identifier: "water.test", content: value,
                 trigger: UNCalendarNotificationTrigger(dateMatching: oneOffComponents(at: Date().addingTimeInterval(10)), repeats: false)))
+        defaults.set(prepared?.name, forKey: testSoundKey)
+        cleanupPreparedSounds()
         return await snapshot()
     }
     func actionFailed(_ error: Error) async {

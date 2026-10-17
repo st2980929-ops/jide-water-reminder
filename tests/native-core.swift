@@ -26,6 +26,10 @@ struct NativeCoreTests {
             catch { }
         }
         rejects(ReminderPlan(version: 2, configuration: "{}", sound: "celesta_soft.wav", requests: [rule]))
+        rejects(ReminderPlan(version: 1, configuration: "{}", sound: "celesta_clear.wav", requests: [rule], volume: -1))
+        rejects(ReminderPlan(version: 1, configuration: "{}", sound: "celesta_clear.wav", requests: [rule], volume: 101))
+        let oldPlan = try JSONDecoder().decode(ReminderPlan.self, from: data)
+        assert(oldPlan.volume == nil && oldPlan.displayVolume == 65)
         rejects(ReminderPlan(version: 1, configuration: "{}", sound: "../../file.wav", requests: [rule]))
         rejects(ReminderPlan(version: 1, configuration: "oops", sound: "celesta_soft.wav", requests: [rule]))
         rejects(ReminderPlan(version: 1, configuration: "{}", sound: "celesta_soft.wav", requests: [rule,rule]))

@@ -18,7 +18,7 @@ visit(objects[project_data['rootObject']]['mainGroup'],project)
 def members(kind):
     return {resolved.get(objects[item]['fileRef']) for phase in objects.values() if phase['isa']==kind for item in phase.get('files',[]) if 'fileRef' in objects[item]}
 sources=members('PBXSourcesBuildPhase');resources=members('PBXResourcesBuildPhase')
-for name in ['ReminderPlan.swift','ReminderScheduler.swift','WaterNotificationsPlugin.swift','WaterBridgeController.swift']:
+for name in ['ReminderPlan.swift','ReminderSoundStore.swift','ReminderScheduler.swift','WaterNotificationsPlugin.swift','WaterBridgeController.swift']:
     path=root/'native'/name
     assert path in sources and path.is_file(), f'Missing native target source: {name}'
 assert root/'native/PrivacyInfo.xcprivacy' in resources
@@ -46,4 +46,4 @@ assert 'server' not in config, 'Packaged app must load local assets, not a live 
 html=(project/'App/public/index.html').read_text()
 for asset in re.findall(r'(?:src|href)="(/[^"?#]+)"',html):
     assert (project/'App/public'/asset.lstrip('/')).is_file(), f'Missing bundled web asset: {asset}'
-print(f'iOS project checks passed: 4 Swift sources, privacy manifest, {len(sounds)} PCM sounds, offline web bundle.')
+print(f'iOS project checks passed: 5 Swift sources, privacy manifest, {len(sounds)} PCM sounds, offline web bundle.')

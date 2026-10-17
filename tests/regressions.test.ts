@@ -34,7 +34,8 @@ test("every offered tone can be saved as either real notification sound version"
   for (const { id } of SOUNDS) {
     for (const loudness of ["soft", "clear"] as const) {
       const plan = compilePlan({ ...config, sound: id, loudness });
-      assert.equal(plan.sound, `${id}_${loudness}.wav`);
+      assert.equal(plan.sound, `${id}_clear.wav`);
+      assert.equal(plan.volume, loudness === "soft" ? 65 : 100);
       assert.ok(plan.requests.length > 0);
     }
   }

@@ -36,7 +36,7 @@ export function stopCurrentSound() {
   if (previous && previous.state !== 'closed') void previous.close().catch(() => {});
 }
 
-async function playPreview(type: SoundType, loudness: LoudnessLevel): Promise<boolean> {
+async function playPreview(type: SoundType, loudness: LoudnessLevel | number): Promise<boolean> {
   stopCurrentSound();
   const request = previewGeneration;
   // Create during the user's tap; never reuse an iOS session interrupted by a system sound.
@@ -44,7 +44,15 @@ async function playPreview(type: SoundType, loudness: LoudnessLevel): Promise<bo
   const context = new Context();
   audioCtx = context;
   try {
-    if (context.state !== 'running') await context.resume();
+    if (context.state !== 'running') {
+      let deadline: ReturnType<typeof setTimeout> | undefined;
+      try {
+        await Promise.race([
+          context.resume(),
+          new Promise<never>((_, reject) => { deadline = setTimeout(() => reject(new Error('音频暂未恢复，请稍后再点试听。')), 4000); }),
+        ]);
+      } finally { clearTimeout(deadline); }
+    }
     if (request !== previewGeneration) return false;
     if (context.state !== 'running') throw new Error('音频尚未恢复，请稍后再点试听。');
     playReminderSound(type, loudness, context);
@@ -76,15 +84,20 @@ function reminderEnvelope(param: AudioParam, start: number, peak: number, attack
  * 2. bamboo  (空灵竹韵): 带有自然管腔空气感的温润竹音，悠远沉静，取代干燥敲击
  * 3. chime   (短风铃): 清澈双音微风铃
  */
-export function playReminderSound(type: SoundType, loudness?: LoudnessLevel): Promise<boolean>;
-export function playReminderSound(type: SoundType, loudness: LoudnessLevel | undefined, context: BaseAudioContext): void;
-export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'clear', context?: BaseAudioContext): Promise<boolean> | void {
+export function playReminderSound(type: SoundType, loudness?: LoudnessLevel | number): Promise<boolean>;
+export function playReminderSound(type: SoundType, loudness: LoudnessLevel | number | undefined, context: BaseAudioContext): void;
+export function playReminderSound(type: SoundType, loudness: LoudnessLevel | number = 'clear', context?: BaseAudioContext): Promise<boolean> | void {
+  if (typeof loudness === 'number' && (!Number.isInteger(loudness) || loudness < 0 || loudness > 100))
+    throw new Error('提示音音量应在 0–100% 之间。');
   if (!context) return playPreview(type, loudness);
+  if (loudness === 0) return;
   try {
     const ctx = context;
+    const level = typeof loudness === 'number' ? 'clear' : loudness;
+    const scale = typeof loudness === 'number' ? loudness / 100 : 1;
 
     const effectiveType = canonicalSound(type);
-    const natural = naturalSoundSource(effectiveType, loudness, ctx, soundDuration(effectiveType));
+    const natural = naturalSoundSource(effectiveType, level, ctx, soundDuration(effectiveType), scale);
     if (natural) {
       natural.start(ctx.currentTime);
       currentSourceNodes = [natural];
@@ -95,7 +108,7 @@ export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'cl
       : effectiveType === 'celesta' ? 0.83
       : effectiveType === 'singingbowl' ? 0.90
       : effectiveType === 'morning' ? 1.05 : 1;
-    const gainFactor = (loudness === 'soft' ? 0.56 : 0.86) * balance;
+    const gainFactor = (level === 'soft' ? 0.56 : 0.86) * balance * scale;
     const now = ctx.currentTime;
 
     if (effectiveType === 'celesta') {

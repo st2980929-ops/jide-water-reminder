@@ -25,7 +25,7 @@ function birdPhrase(time: number, start: number, duration: number, offset: numbe
 }
 
 export function naturalSoundSource(
-  type: string, loudness: LoudnessLevel, context: BaseAudioContext, duration: number,
+  type: string, loudness: LoudnessLevel, context: BaseAudioContext, duration: number, volumeScale = 1,
 ): AudioBufferSourceNode | null {
   if (!NATURAL_SOUNDS.has(type)) return null;
   const rate = context.sampleRate;
@@ -87,7 +87,7 @@ export function naturalSoundSource(
   }
   const rms = Math.sqrt(energy / samples.length);
   // Match the existing set's digital level while retaining peak headroom and dynamics.
-  const scale = Math.min(0.16 / rms, 0.86 / peak) * (loudness === 'soft' ? 0.65 : 1);
+  const scale = Math.min(0.16 / rms, 0.86 / peak) * (loudness === 'soft' ? 0.65 : 1) * volumeScale;
   for (let i = 0; i < samples.length; i++) samples[i] *= scale;
   const source = context.createBufferSource();
   source.buffer = buffer;

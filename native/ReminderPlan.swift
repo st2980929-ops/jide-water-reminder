@@ -50,6 +50,8 @@ struct ReminderPlan: Codable {
     var configuration: String
     let sound: String
     let requests: [ReminderRule]
+    var volume: Int? = nil // Old plans already point to a soft/clear file and must not be scaled twice.
+    var displayVolume: Int { volume ?? (sound.hasSuffix("_soft.wav") ? 65 : 100) }
 
     static let sounds: Set<String> = Set(["celesta","bamboo","chime","raindrop","singingbowl","morning","brook","ceramic","shore","breeze","birds","woodland"].flatMap { name in
         ["\(name)_soft.wav","\(name)_clear.wav"]
@@ -65,10 +67,11 @@ struct ReminderPlan: Codable {
         config["sound"] = "celesta"
         let updated = try JSONSerialization.data(withJSONObject: config, options: [.sortedKeys])
         return ReminderPlan(version: version, configuration: String(decoding: updated, as: UTF8.self),
-                            sound: sound.hasSuffix("_clear.wav") ? "celesta_clear.wav" : "celesta_soft.wav", requests: requests)
+                            sound: sound.hasSuffix("_clear.wav") ? "celesta_clear.wav" : "celesta_soft.wav", requests: requests, volume: volume)
     }
 
     func validate() throws {
+        guard volume == nil || (0...100).contains(volume!) else { throw ReminderError.invalid("提示音音量应在 0–100% 之间。") }
         guard version==1, !requests.isEmpty, requests.count<=62 else {
             throw ReminderError.invalid("当前安排过密或为空，请调整日期、时段或提醒间隔。")
         }

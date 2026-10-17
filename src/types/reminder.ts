@@ -28,6 +28,7 @@ export interface ReminderConfig {
   specificDates: string[]; // ["2026-10-16", "2026-10-17"]
   sound: SoundType;
   loudness: LoudnessLevel;
+  soundVolume?: number; // Base audio level, 0–100. Missing values migrate from the old preset.
   notificationPermission: 'granted' | 'denied' | 'prompt';
   isPausedToday: boolean; // Legacy key: persistent pause until the user resumes.
   pausedUntilDate?: string;

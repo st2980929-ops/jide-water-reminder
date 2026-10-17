@@ -39,7 +39,7 @@ Snooze adds an extra request approximately ten minutes later without shifting al
 - Native schedule configuration takes precedence on cold launch; optional cup records remain local UI data.
 - No analytics, Gemini requests or remote runtime assets. Capacitor loads the bundled web output; no `server.url` is configured.
 - Privacy manifest declares app-only UserDefaults use (`CA92.1`), no tracking and no collected data.
-- Twelve synthesized sounds are rendered offline as mono 44.1 kHz, 16-bit PCM WAV: the original six are 1.2 seconds and the new six are 1.8 seconds. Soft/clear differ in gain; sound files are copied into the native bundle root.
+- Six sounds are offered, rendered offline as mono 44.1 kHz, 16-bit PCM WAV. Their soft/clear assets plus retired compatibility assets total 24 bundle files. New settings use clear-source PCM amplitude scaling, described under 0.3.0 below.
 
 ## Validation completed on this Mac
 
@@ -99,3 +99,16 @@ The single existing sound selector groups nature impressions and warm tones. Pre
 134 automatic checks pass, including new gradual-onset/fade and tone-to-notification filename checks; native model/trigger checks pass. Each new sound is 1.8 seconds, with average digital level balanced against the existing set. Soft/clear remain distinct and no file clips. Digital measurements do not prove that an individual listener finds a tone natural or comfortable; the supplied collection supports direct comparison.
 
 0.2.0 delivery verification: the existing signed delivery project passed a generic iOS Release build and strict signature verification. The app reports 记得 0.2.0 build 5; all 24 bundled WAVs and web assets match the delivery/source. Six new selector options were exercised at 390px width without overflow or observed warning/error logs. The build retains the existing signing team and bundle identifier. The device initially lacked a usable development connection. After the user reconnected and unlocked it, the signed build was installed over the existing app. A device query confirms 记得 0.2.0 build 5; read-only comparison confirms the native plan, eight rules, chosen sound and pause state are preserved. New tone listening remains user-initiated.
+
+
+## Sound controls (0.3.0)
+
+Delivered in the requested order: preview defect, six retired options, then base-volume slider. An isolated fake Web Audio regression reproduced reuse of an interrupted context and a swallowed resume failure; it did not reproduce the user's exact physical-device occurrence. Browser preview now creates a fresh context, surfaces failures and bounds a nonresolving resume. iPhone preview instead uses AVAudioPlayer on the main queue, reading the same prepared WAV used by local notifications. Each explicit preview activates a mixing playback session and releases it on completion, cancellation, interruption, error, backgrounding or watchdog expiry. Token/player identity plus frontend generation checks prevent obsolete callbacks from stopping a newer preview.
+
+Removed bamboo, chime, brook, shore, breeze and birds from the selectable catalog, leaving celesta, raindrop, singingbowl, morning, ceramic and woodland. Old selected plans migrate to celesta while preserving rules/configuration/pause. Replacement uses the existing transactional queue path. Retired WAVs stay in the bundle so notifications queued before the update remain valid before the next launch. They are not offered for selection.
+
+A single accessible rectangular range replaces the soft/clear selector. It stores an integer 0–100, with legacy soft/clear display fallbacks of 65/100. New plans use the clear source plus numeric volume. Missing native volume keeps old file amplitude unchanged until resaved, avoiding scaling an old soft file twice. Zero means notification content has no sound. Slider changes are drafts; Save commits them. Tests use the draft without replacing the regular plan.
+
+ReminderSoundStore validates known PCM16 exports and scales samples offline. Intermediate volumes write atomically to Library/Sounds, with source-content hashes in filenames and post-first-unlock file protection. The same prepared file is used by native preview, test, configure, snooze and resume. Cache pruning protects the saved-plan/test sound and leaves a 120-second grace period for other recent files. It never touches system-volume APIs or requests critical alerts/background playback. The system's alert volume and sound policies still apply.
+
+Validation: 87 TypeScript/UI/offline-audio tests pass; native model, absolute-trigger and actual PCM/cache tests pass. Tests check half-amplitude samples, silence, invalid volume, original headers, content-hash changes and cache pruning. The complete iOS target builds successfully. At 320/390px the selector/slider fit without horizontal overflow; keyboard endpoints reach mute/maximum and observed console warnings/errors were zero. No speaker playback or test notification was triggered during these checks. Listening on the physical iPhone remains required to confirm the original sequence and comfortable loudness.

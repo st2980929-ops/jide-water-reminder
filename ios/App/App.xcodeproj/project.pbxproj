@@ -45,6 +45,7 @@
 		7BA90963DF25DB86838E3319 /* shore_soft.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1D6835D6C113476AF1EFA2BA; };
 		BEBE8FBEC9123B0EDD00E0AF /* woodland_clear.wav in Resources */ = {isa = PBXBuildFile; fileRef = 534515DC8366C07FA5D929DC; };
 		20B92D71CC5761C9E818FC5A /* woodland_soft.wav in Resources */ = {isa = PBXBuildFile; fileRef = 9CCE5F90E0C98F39730C047E; };
+		37B19CE02EDC4939633C7A76 /* ReminderSoundStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E08EA387B86FEEE55133E563; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -88,6 +89,7 @@
 		1D6835D6C113476AF1EFA2BA /* shore_soft.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = shore_soft.wav; sourceTree = "<group>"; };
 		534515DC8366C07FA5D929DC /* woodland_clear.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = woodland_clear.wav; sourceTree = "<group>"; };
 		9CCE5F90E0C98F39730C047E /* woodland_soft.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = woodland_soft.wav; sourceTree = "<group>"; };
+		E08EA387B86FEEE55133E563 /* ReminderSoundStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderSoundStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -145,6 +147,7 @@
 				2565B854A7818E0B65709198 /* WaterNotificationsPlugin.swift */,
 				5CA80E2469B70B283B8439BC /* WaterBridgeController.swift */,
 				EB1E9ED18B051532FB36FF28 /* PrivacyInfo.xcprivacy */,
+				E08EA387B86FEEE55133E563 /* ReminderSoundStore.swift */,
 			);
 			name = Native;
 			path = "../../native";
@@ -294,6 +297,7 @@
 				A0784B50F4EB84046D54CC43 /* WaterNotificationsPlugin.swift in Sources */,
 				0CD48145BCDFF8E478B20D56 /* WaterBridgeController.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
+				37B19CE02EDC4939633C7A76 /* ReminderSoundStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -434,14 +438,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.3.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
 				PRODUCT_BUNDLE_IDENTIFIER = local.hydration.waterreminder;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -456,14 +460,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = local.hydration.waterreminder;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
