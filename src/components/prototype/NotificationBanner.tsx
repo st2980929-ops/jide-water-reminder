@@ -35,7 +35,7 @@ export const NotificationBanner: React.FC<NotificationBannerProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      playReminderSound(sound, loudness);
+      void playReminderSound(sound, loudness).catch(() => {});
       setFeedbackMessage(null);
       setIsDrinkingAnimation(false);
     }

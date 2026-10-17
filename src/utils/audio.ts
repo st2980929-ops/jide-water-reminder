@@ -4,9 +4,11 @@ import { naturalSoundSource } from './natural-sounds';
 
 let audioCtx: AudioContext | null = null;
 let currentSourceNodes: { stop?: () => void }[] = [];
+let previewGeneration = 0;
+let previewCleanup: ReturnType<typeof setTimeout> | undefined;
 
 function getAudioContext(): AudioContext {
-  if (!audioCtx) {
+  if (!audioCtx || audioCtx.state === 'closed') {
     const AudioContextClass =
       window.AudioContext ||
       (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -19,6 +21,8 @@ function getAudioContext(): AudioContext {
 }
 
 export function stopCurrentSound() {
+  previewGeneration += 1;
+  clearTimeout(previewCleanup);
   currentSourceNodes.forEach((node) => {
     try {
       if (node.stop) node.stop();
@@ -27,6 +31,32 @@ export function stopCurrentSound() {
     }
   });
   currentSourceNodes = [];
+  const previous = audioCtx;
+  audioCtx = null;
+  if (previous && previous.state !== 'closed') void previous.close().catch(() => {});
+}
+
+async function playPreview(type: SoundType, loudness: LoudnessLevel): Promise<boolean> {
+  stopCurrentSound();
+  const request = previewGeneration;
+  // Create during the user's tap; never reuse an iOS session interrupted by a system sound.
+  const Context = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+  const context = new Context();
+  audioCtx = context;
+  try {
+    if (context.state !== 'running') await context.resume();
+    if (request !== previewGeneration) return false;
+    if (context.state !== 'running') throw new Error('音频尚未恢复，请稍后再点试听。');
+    playReminderSound(type, loudness, context);
+    previewCleanup = setTimeout(() => {
+      if (request === previewGeneration) stopCurrentSound();
+    }, soundDuration(type) * 1000 + 100);
+    return true;
+  } catch (error) {
+    if (request !== previewGeneration) return false;
+    stopCurrentSound();
+    throw error instanceof Error ? error : new Error('试听没有成功，请再试一次。');
+  }
 }
 
 // The original exponential tails reached near-silence within a few tenths of a second.
@@ -46,10 +76,12 @@ function reminderEnvelope(param: AudioParam, start: number, peak: number, attack
  * 2. bamboo  (空灵竹韵): 带有自然管腔空气感的温润竹音，悠远沉静，取代干燥敲击
  * 3. chime   (短风铃): 清澈双音微风铃
  */
-export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'clear', context?: BaseAudioContext) {
+export function playReminderSound(type: SoundType, loudness?: LoudnessLevel): Promise<boolean>;
+export function playReminderSound(type: SoundType, loudness: LoudnessLevel | undefined, context: BaseAudioContext): void;
+export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'clear', context?: BaseAudioContext): Promise<boolean> | void {
+  if (!context) return playPreview(type, loudness);
   try {
-    const ctx = context ?? getAudioContext();
-    if (!context) stopCurrentSound();
+    const ctx = context;
 
     const effectiveType = canonicalSound(type);
     const natural = naturalSoundSource(effectiveType, loudness, ctx, soundDuration(effectiveType));
@@ -282,11 +314,11 @@ export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'cl
  */
 export function playDrinkWaterSound() {
   try {
+    stopCurrentSound();
     const ctx = getAudioContext();
     if (ctx.state === 'suspended') {
       ctx.resume();
     }
-    stopCurrentSound();
     const now = ctx.currentTime;
 
     // === 第 1 阶段：“咕” (Glug: 喉头吸液共鸣，快速下潜滑音，约 65ms) ===

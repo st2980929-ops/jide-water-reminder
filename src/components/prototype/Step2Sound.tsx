@@ -35,10 +35,13 @@ export function Step2Sound({
 }: Props) {
   const t = getThemeTokens(isDarkMode);
   const [playing, setPlaying] = useState(false);
+  const [previewError, setPreviewError] = useState("");
+  const previewGeneration = useRef(0);
   const [now, setNow] = useState(Date.now);
   const timer = useRef<number | undefined>(undefined);
   useEffect(
     () => () => {
+      previewGeneration.current += 1;
       stopCurrentSound();
       window.clearTimeout(timer.current);
     },
@@ -54,11 +57,27 @@ export function Step2Sound({
     Math.ceil(((status?.testReminderAt ?? 0) - now) / 1000),
   );
   const selected = SOUNDS.find((s) => s.id === canonicalSound(config.sound)) ?? SOUNDS[0];
-  const preview = () => {
-    setPlaying(true);
-    playReminderSound(config.sound, config.loudness);
+  const stopPreview = () => {
+    previewGeneration.current += 1;
+    stopCurrentSound();
     window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => setPlaying(false), soundDuration(config.sound) * 1000 + 150);
+    setPlaying(false);
+  };
+  const preview = async () => {
+    const request = ++previewGeneration.current;
+    setPlaying(true);
+    setPreviewError("");
+    try {
+      const started = await playReminderSound(config.sound, config.loudness);
+      if (request !== previewGeneration.current) return;
+      if (!started) { setPlaying(false); return; }
+      window.clearTimeout(timer.current);
+      timer.current = window.setTimeout(() => setPlaying(false), soundDuration(config.sound) * 1000 + 150);
+    } catch (error) {
+      if (request !== previewGeneration.current) return;
+      setPlaying(false);
+      setPreviewError(error instanceof Error ? error.message : "试听没有成功，请再试一次。");
+    }
   };
   const fieldStyle = {
     backgroundColor: t.surface,
@@ -103,8 +122,8 @@ export function Step2Sound({
               id="reminder-sound"
               value={selected.id}
               onChange={(e) => {
-                stopCurrentSound();
-                setPlaying(false);
+                stopPreview();
+                setPreviewError("");
                 onChange({ sound: e.target.value as SoundType });
               }}
               className="min-w-0 flex-1 min-h-12 px-3 rounded-xl border text-base"
@@ -131,6 +150,7 @@ export function Step2Sound({
               {playing ? "播放中" : "试听"}
             </button>
           </div>
+          {previewError && <p role="alert" className="text-xs mt-2" style={{ color: t.error }}>{previewError}</p>}
           <p
             className="text-xs mt-2 leading-relaxed"
             style={{ color: t.textSecondary }}
@@ -199,7 +219,7 @@ export function Step2Sound({
           </p>
           <button
             disabled={busy || remaining > 0}
-            onClick={onTriggerTestNotification}
+            onClick={() => { stopPreview(); onTriggerTestNotification(); }}
             className="w-full min-h-11 mt-3 rounded-xl border text-sm"
             style={{ ...fieldStyle, color: t.accent }}
           >
@@ -244,7 +264,7 @@ export function Step2Sound({
             )}
             <button
               disabled={busy || remaining > 0}
-              onClick={onTestSystemSound}
+              onClick={() => { stopPreview(); onTestSystemSound(); }}
               className="w-full min-h-11 mt-4 rounded-xl border text-sm"
               style={{ ...fieldStyle, color: t.accent }}
             >
