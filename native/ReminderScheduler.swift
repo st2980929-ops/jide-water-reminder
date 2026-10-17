@@ -16,6 +16,7 @@ actor ReminderScheduler {
     private let planKey = "water.native.plan.v1"
     private let pausedKey = "water.native.paused.v1"
     private let testSoundKey = "water.native.test-sound.v1"
+    private let reminderTitle = "记得 喝口水吧"
     private let soundStore = ReminderSoundStore.live
     private var busy = false
 
@@ -65,7 +66,7 @@ actor ReminderScheduler {
     }
     private func content(soundName: String?) -> UNMutableNotificationContent {
         let value = UNMutableNotificationContent()
-        value.title = "喝口水吧"
+        value.title = reminderTitle
         value.body = "忙到这里，也照顾一下自己。"
         if let name = soundName { value.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: name)) }
         value.categoryIdentifier = "WATER_REMINDER"
@@ -79,6 +80,20 @@ actor ReminderScheduler {
             guard trigger.nextTriggerDate() != nil else { return nil }
             return UNNotificationRequest(identifier: rule.id, content: content(soundName: prepared.name), trigger: trigger)
         }
+    }
+    private func updatePendingReminderTitles() async throws {
+        var updatedCount = 0
+        for request in await pending() where
+            (request.identifier.hasPrefix("water.rule.") || request.identifier == "water.snooze") &&
+            request.content.title == "喝口水吧" && request.nextFireDate != nil {
+            let updated = request.content.mutableCopy() as! UNMutableNotificationContent
+            updated.title = reminderTitle
+            // The same identifier replaces the pending request. Preserve its
+            // exact trigger, sound, body and actions without resaving the plan.
+            try await add(UNNotificationRequest(identifier: request.identifier, content: updated, trigger: request.trigger))
+            updatedCount += 1
+        }
+        if updatedCount > 0 { print("[记得] 待发提醒标题更新完成：\(updatedCount) 条。") }
     }
     private func cleanupPreparedSounds() {
         var names = Set<String>()
@@ -154,8 +169,12 @@ actor ReminderScheduler {
                 }
             } catch { notice = "原提示音已移除，请在声音设置中重新保存。" }
         }
+        do { try await updatePendingReminderTitles() }
+        catch {
+            notice = [notice, "部分通知标题尚未更新，请重新保存提醒安排。"].compactMap { $0 }.joined(separator: " ")
+        }
         var value = await snapshot()
-        if let notice = notice { value["soundMigrationNotice"] = notice }
+        if let notice = notice { value["migrationNotice"] = notice }
         return value
     }
     func requestPermission() async throws -> [String: Any] {

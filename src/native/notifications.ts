@@ -15,7 +15,7 @@ export interface NativeStatus {
   savedVolume?: number | null;
   soundResourceAvailable: boolean;
   testReminderAt: number | null;
-  soundMigrationNotice?: string;
+  migrationNotice?: string;
 }
 interface NotificationsPlugin {
   status(): Promise<NativeStatus>;

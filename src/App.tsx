@@ -155,7 +155,7 @@ export default function App() {
         const value = await notifications.status();
         if (!alive || operation.current || startedAt !== generation.current)
           return;
-        if (value.soundMigrationNotice) setMessage(value.soundMigrationNotice);
+        if (value.migrationNotice) setMessage(value.migrationNotice);
         if (initial && value.hasPlan) {
           const saved = JSON.parse(value.configuration) as ReminderConfig;
           const local = resetDay(readLocal());

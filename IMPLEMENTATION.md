@@ -127,3 +127,10 @@ Ninety automated checks pass, including local-day stability, month/year/leap-day
 
 
 0.3.1 delivery verification: the signed Release target builds and verifies successfully. The built bundle reports 记得 0.3.1 build 7 and all web resources match the delivery. Browser checks at 320px (dark) and 390px (dark/light) show the daily phrase without horizontal overflow or observed console warnings/errors; a preview screenshot is delivered. The phone update succeeded and a device query confirms 0.3.1 build 7. Before/after own-app preferences preserve the native plan, eight rules, sound/volume and pause state. Real midnight rollover was verified through calendar/DST regression tests, not by changing the user's device clock or waiting for a real midnight.
+
+
+## Branded notification title (0.3.2)
+
+Regular/snooze reminder content now uses the exact title `记得 喝口水吧` (one ASCII space). The body stays the same. When status loads, only pending water.rule.* / water.snooze requests with the old exact title are replaced, using the original identifier, trigger and mutable-copied content; no plan recompile or permission request is involved. The existing actor transaction lock serializes this with user actions. Failed updates leave a visible migration notice and retry at a later status refresh. Pause state, configuration, file volume, dates and actions are retained. Test/pause/error notifications and previously delivered notifications are outside the update filter.
+
+The internal app-only migration notice field is generalized from soundMigrationNotice to migrationNotice so sound and title updates share the existing UI message handling. Apple documents replacement of pending requests when adding a new request with the same identifier: https://developer.apple.com/documentation/usernotifications/unnotificationrequest/identifier .
