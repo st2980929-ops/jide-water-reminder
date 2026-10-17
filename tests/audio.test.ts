@@ -3,9 +3,9 @@ import { test } from "node:test";
 import { OfflineAudioContext } from "node-web-audio-api";
 import { playReminderSound } from "../src/utils/audio";
 import type { LoudnessLevel, SoundType } from "../src/types/reminder";
+import { soundDuration } from "../src/utils/sounds";
 
 const SAMPLE_RATE = 44100;
-const DURATION_SECONDS = 1.2;
 const AUDIBLE_THRESHOLD = 10 ** (-40 / 20);
 const MIN_AUDIBLE_SPAN_SECONDS = 0.6;
 const MAX_PEAK = 0.92;
@@ -20,6 +20,8 @@ const SOUNDS: SoundType[] = [
   "raindrop",
   "singingbowl",
   "morning",
+  "brook",
+  "ceramic",
 ];
 
 // Digital signal design targets, not speaker SPL or hearing-safety guarantees.
@@ -27,7 +29,7 @@ const SOUNDS: SoundType[] = [
 async function measureSound(sound: SoundType, loudness: LoudnessLevel) {
   const context = new OfflineAudioContext(
     1,
-    Math.ceil(SAMPLE_RATE * DURATION_SECONDS),
+    Math.ceil(SAMPLE_RATE * soundDuration(sound)),
     SAMPLE_RATE,
   );
   playReminderSound(sound, loudness, context as unknown as BaseAudioContext);

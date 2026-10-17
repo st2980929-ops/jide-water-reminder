@@ -7,6 +7,8 @@ export type SoundType =
   | 'raindrop'    // 晨雨露滴
   | 'singingbowl' // 静谧铜磬
   | 'morning'     // 晨光微弦
+  | 'brook'       // 溪涧缓流
+  | 'ceramic'     // 陶杯轻触
   | 'drop' | 'wood'; // 兼容兼容项
 export type LoudnessLevel = 'soft' | 'clear';
 

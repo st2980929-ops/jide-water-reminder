@@ -51,7 +51,7 @@ struct ReminderPlan: Codable {
     let sound: String
     let requests: [ReminderRule]
 
-    static let sounds: Set<String> = Set(["celesta","bamboo","chime","raindrop","singingbowl","morning"].flatMap { name in
+    static let sounds: Set<String> = Set(["celesta","bamboo","chime","raindrop","singingbowl","morning","brook","ceramic"].flatMap { name in
         ["\(name)_soft.wav","\(name)_clear.wav"]
     })
 

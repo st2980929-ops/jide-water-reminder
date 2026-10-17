@@ -8,6 +8,11 @@ struct NativeCoreTests {
         try plan.validate()
         let data = try JSONEncoder().encode(plan)
         try JSONDecoder().decode(ReminderPlan.self, from: data).validate()
+        for name in ["brook", "ceramic"] {
+            for level in ["soft", "clear"] {
+                try ReminderPlan(version: 1, configuration: "{}", sound: "\(name)_\(level).wav", requests: [rule]).validate()
+            }
+        }
         func rejects(_ invalid: ReminderPlan) {
             do { try invalid.validate(); fatalError("Invalid plan was accepted") }
             catch { }

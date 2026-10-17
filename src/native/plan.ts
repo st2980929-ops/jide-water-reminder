@@ -11,6 +11,8 @@ const SOUNDS = [
   "raindrop",
   "singingbowl",
   "morning",
+  "brook",
+  "ceramic",
   "drop",
   "wood",
 ];

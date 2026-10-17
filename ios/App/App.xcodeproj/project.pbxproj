@@ -33,6 +33,10 @@
 		0C30B7757F8A7782C34D3108 /* morning_soft.wav in Resources */ = {isa = PBXBuildFile; fileRef = BC8210E2FF8BE007A71B4668; };
 		04E03447C8476B0C665543A7 /* morning_clear.wav in Resources */ = {isa = PBXBuildFile; fileRef = 243254980E0E1A490E44605E; };
 		9BB407718D9D26EDD1309082 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = EB1E9ED18B051532FB36FF28; };
+		6FA0E8533672A2F0B37E0652 /* brook_clear.wav in Resources */ = {isa = PBXBuildFile; fileRef = F576279A28AFD7264CF334C6; };
+		7F6ED42C7FFAB0E2AFF0F8D6 /* brook_soft.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0C25FE772217BEED4BD50F41; };
+		5AE2A9BC2BE25A8458CF792E /* ceramic_clear.wav in Resources */ = {isa = PBXBuildFile; fileRef = 5F11369158A9FE89C589AF8D; };
+		21EF1F7F105F5DE4685621F3 /* ceramic_soft.wav in Resources */ = {isa = PBXBuildFile; fileRef = 091A718A83AC834BD1FE6D9A; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -64,6 +68,10 @@
 		BC8210E2FF8BE007A71B4668 /* morning_soft.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = morning_soft.wav; sourceTree = "<group>"; };
 		243254980E0E1A490E44605E /* morning_clear.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = morning_clear.wav; sourceTree = "<group>"; };
 		EB1E9ED18B051532FB36FF28 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		F576279A28AFD7264CF334C6 /* brook_clear.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = brook_clear.wav; sourceTree = "<group>"; };
+		0C25FE772217BEED4BD50F41 /* brook_soft.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = brook_soft.wav; sourceTree = "<group>"; };
+		5F11369158A9FE89C589AF8D /* ceramic_clear.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = ceramic_clear.wav; sourceTree = "<group>"; };
+		091A718A83AC834BD1FE6D9A /* ceramic_soft.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = ceramic_soft.wav; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -141,6 +149,10 @@
 				F7B271965D2024871A06F0CD /* singingbowl_clear.wav */,
 				BC8210E2FF8BE007A71B4668 /* morning_soft.wav */,
 				243254980E0E1A490E44605E /* morning_clear.wav */,
+				F576279A28AFD7264CF334C6 /* brook_clear.wav */,
+				0C25FE772217BEED4BD50F41 /* brook_soft.wav */,
+				5F11369158A9FE89C589AF8D /* ceramic_clear.wav */,
+				091A718A83AC834BD1FE6D9A /* ceramic_soft.wav */,
 			);
 			name = Sounds;
 			path = "../../native/sounds";
@@ -230,6 +242,10 @@
 				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
+				6FA0E8533672A2F0B37E0652 /* brook_clear.wav in Resources */,
+				7F6ED42C7FFAB0E2AFF0F8D6 /* brook_soft.wav in Resources */,
+				5AE2A9BC2BE25A8458CF792E /* ceramic_clear.wav in Resources */,
+				21EF1F7F105F5DE4685621F3 /* ceramic_soft.wav in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

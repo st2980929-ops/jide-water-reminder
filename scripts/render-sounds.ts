@@ -1,19 +1,13 @@
 import { OfflineAudioContext } from "node-web-audio-api";
 import { writeFile, mkdir } from "node:fs/promises";
 import { playReminderSound } from "../src/utils/audio";
-import type { SoundType, LoudnessLevel } from "../src/types/reminder";
+import type { LoudnessLevel } from "../src/types/reminder";
+import { SOUNDS, soundDuration } from "../src/utils/sounds";
 
-const rate = 44100,
-  duration = 1.2;
+const rate = 44100;
 await mkdir("native/sounds", { recursive: true });
-for (const sound of [
-  "celesta",
-  "bamboo",
-  "chime",
-  "raindrop",
-  "singingbowl",
-  "morning",
-] as SoundType[]) {
+for (const { id: sound } of SOUNDS) {
+  const duration = soundDuration(sound);
   for (const loudness of ["soft", "clear"] as LoudnessLevel[]) {
     const context = new OfflineAudioContext(
       1,

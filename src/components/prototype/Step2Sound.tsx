@@ -6,7 +6,7 @@ import type {
 } from "../../types/reminder";
 import type { NativeStatus } from "../../native/notifications";
 import { playReminderSound, stopCurrentSound } from "../../utils/audio";
-import { SOUNDS, soundName, canonicalSound } from "../../utils/sounds";
+import { SOUNDS, soundName, canonicalSound, soundDuration } from "../../utils/sounds";
 import { Volume2, ArrowLeft } from "lucide-react";
 import { getThemeTokens } from "../../utils/theme";
 interface Props {
@@ -58,7 +58,7 @@ export function Step2Sound({
     setPlaying(true);
     playReminderSound(config.sound, config.loudness);
     window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => setPlaying(false), 1500);
+    timer.current = window.setTimeout(() => setPlaying(false), soundDuration(config.sound) * 1000 + 150);
   };
   const fieldStyle = {
     backgroundColor: t.surface,

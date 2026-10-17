@@ -1,5 +1,6 @@
 import { SoundType, LoudnessLevel } from '../types/reminder';
-import { canonicalSound } from './sounds';
+import { canonicalSound, soundDuration } from './sounds';
+import { naturalSoundSource } from './natural-sounds';
 
 let audioCtx: AudioContext | null = null;
 let currentSourceNodes: { stop?: () => void }[] = [];
@@ -51,6 +52,12 @@ export function playReminderSound(type: SoundType, loudness: LoudnessLevel = 'cl
     if (!context) stopCurrentSound();
 
     const effectiveType = canonicalSound(type);
+    const natural = naturalSoundSource(effectiveType, loudness, ctx, soundDuration(effectiveType));
+    if (natural) {
+      natural.start(ctx.currentTime);
+      currentSourceNodes = [natural];
+      return;
+    }
     // Compensate the bamboo filter and avoid brighter celesta partials dominating the set.
     const balance = effectiveType === 'bamboo' ? 1.6
       : effectiveType === 'celesta' ? 0.83

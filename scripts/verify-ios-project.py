@@ -25,7 +25,9 @@ assert root/'native/PrivacyInfo.xcprivacy' in resources
 icon=(project/'App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png').read_bytes()
 assert icon[16:24]==(1024).to_bytes(4,'big')*2 and icon[25]==2, 'Icon must be 1024px RGB without alpha' 
 sounds=sorted((root/'native/sounds').glob('*.wav'))
-assert len(sounds)==12
+native_plan=(root/'native/ReminderPlan.swift').read_text()
+sound_names=json.loads(re.search(r'static let sounds:.*?Set\((\[.*?\])\.flatMap',native_plan,re.S).group(1))
+assert {p.name for p in sounds}=={f'{name}_{level}.wav' for name in sound_names for level in ['soft','clear']}, 'Native sound allowlist and exported files differ'
 rms={}
 for path in sounds:
     assert path in resources, f'Not copied into notification bundle root: {path.name}'
@@ -35,11 +37,13 @@ for path in sounds:
         samples=array.array('h',audio.readframes(audio.getnframes()))
         assert 0<max(abs(value) for value in samples)<32767
         rms[path.stem]=math.sqrt(sum(value*value for value in samples)/len(samples))
-for sound in ['celesta','bamboo','chime','raindrop','singingbowl','morning']:
+for sound in sound_names:
     assert rms[sound+'_soft']<rms[sound+'_clear']
+    assert rms[sound+'_soft']/32768 >= .075, f'Soft export too quiet: {sound}'
+    assert rms[sound+'_clear']/32768 >= .115, f'Clear export too quiet: {sound}'
 config=json.loads((project/'App/capacitor.config.json').read_text())
 assert 'server' not in config, 'Packaged app must load local assets, not a live development server'
 html=(project/'App/public/index.html').read_text()
 for asset in re.findall(r'(?:src|href)="(/[^"?#]+)"',html):
     assert (project/'App/public'/asset.lstrip('/')).is_file(), f'Missing bundled web asset: {asset}'
-print('iOS project checks passed: 4 Swift sources, privacy manifest, 12 PCM sounds, offline web bundle.')
+print(f'iOS project checks passed: 4 Swift sources, privacy manifest, {len(sounds)} PCM sounds, offline web bundle.')
