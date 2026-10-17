@@ -39,7 +39,7 @@ Snooze adds an extra request approximately ten minutes later without shifting al
 - Native schedule configuration takes precedence on cold launch; optional cup records remain local UI data.
 - No analytics, Gemini requests or remote runtime assets. Capacitor loads the bundled web output; no `server.url` is configured.
 - Privacy manifest declares app-only UserDefaults use (`CA92.1`), no tracking and no collected data.
-- Six supplied synthesized sounds are rendered offline as mono 44.1 kHz, 16-bit PCM WAV, 1.2 seconds each. Soft/clear differ in gain; sound files are copied into the native bundle root.
+- Twelve synthesized sounds are rendered offline as mono 44.1 kHz, 16-bit PCM WAV: the original six are 1.2 seconds and the new six are 1.8 seconds. Soft/clear differ in gain; sound files are copied into the native bundle root.
 
 ## Validation completed on this Mac
 
@@ -89,3 +89,13 @@ Install 0.1.3 over the existing app, save the chosen sound once, and compare a r
 0.1.3 delivery verification: TypeScript and all 73 automatic checks passed; production web build/sync, iOS resource verification and both unsigned and signed generic iOS Release builds passed. All twelve WAVs in the built bundle match regenerated source files, and bundled web assets match the delivery. Browser inspection at 390 × 844 showed no horizontal overflow or observed warning/error logs. Apple reports a non-blocking AppIntents metadata extraction warning because this target does not link AppIntents.
 
 The signed build was installed over the connected user's existing app. A subsequent device app query confirms display name 记得, version 0.1.3, build 4. Read-only own-app preferences confirm semantic preservation of the native plan, selected morning_soft.wav, eight rules and pause state. Acoustic listening while the video plays is still awaiting the user's confirmation.
+
+## Natural reminder collection (0.2.0)
+
+Added brook, shore, breeze, birds, ceramic and woodland, with both soft and clear variants. They use deterministic procedural synthesis: shaped filtered noise, curved water/bird phrases and damped material resonances. They are designed nature impressions, not field recordings. No remote audio dependency or external sound asset is introduced. Original tones and selected user preferences are retained.
+
+The single existing sound selector groups nature impressions and warm tones. Preview busy time follows the selected file duration. JS validation uses the offered catalog, Swift validates all 24 exact filenames, and resource verification compares the native allowlist to exported assets and target membership. Export uses the same synthesis as preview.
+
+134 automatic checks pass, including new gradual-onset/fade and tone-to-notification filename checks; native model/trigger checks pass. Each new sound is 1.8 seconds, with average digital level balanced against the existing set. Soft/clear remain distinct and no file clips. Digital measurements do not prove that an individual listener finds a tone natural or comfortable; the supplied collection supports direct comparison.
+
+0.2.0 delivery verification: the existing signed delivery project passed a generic iOS Release build and strict signature verification. The app reports 记得 0.2.0 build 5; all 24 bundled WAVs and web assets match the delivery/source. Six new selector options were exercised at 390px width without overflow or observed warning/error logs. The build retains the existing signing team and bundle identifier. The device currently has no usable development connection, so this build has not yet been installed on the user's iPhone.
