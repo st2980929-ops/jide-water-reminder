@@ -7,6 +7,7 @@ import {
 import { CupWaterlineSVG } from "../logo/LogoSketches";
 import { getThemeTokens } from "../../utils/theme";
 import { Settings, Clock, Check } from "lucide-react";
+import { DailyHealthTip } from "./DailyHealthTip";
 
 interface Props {
   config: ReminderConfig;
@@ -63,9 +64,7 @@ export function HomeScreen({
         </button>
       </header>
       <section className="flex-1 flex flex-col justify-center items-center py-10 text-center">
-        <p className="text-sm mb-6" style={{ color: t.textSecondary }}>
-          留一点时间，喝口水。
-        </p>
+        <DailyHealthTip color={t.textSecondary} />
         <div
           role="img"
           aria-label={`水杯里还剩 ${remaining} 杯的水位`}

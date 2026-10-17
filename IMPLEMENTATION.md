@@ -115,3 +115,12 @@ Validation: 87 TypeScript/UI/offline-audio tests pass; native model, absolute-tr
 
 
 0.3.0 delivery verification: the delivered project retained the user's signing team and Bundle Identifier and passed a signed generic iOS Release build plus strict signature verification. The built Info.plist reports 记得 0.3.0 build 6; all 24 bundle WAVs and generated web files match the delivery. The only build warning is skipped optional AppIntents metadata extraction. Installation over the connected iPhone succeeded; a subsequent device app query confirms 0.3.0 build 6. Read-only before/after own-app preferences compare semantically equal: eight reminder rules, the selected ceramic_soft.wav and pause state are unchanged. The app was not launched or made to play notifications as part of installation verification. The user can open Sound & Notifications, adjust/save and repeat the original test-notification → preview flow.
+
+
+## Daily health phrase (0.3.1)
+
+HomeScreen replaces its fixed cup caption with DailyHealthTip, keeping the existing secondary text style and controls. Fourteen bundled phrases cover hydration, possible dehydration signs, drink choices and taking movement breaks. HEALTH_TIPS.md maps every phrase to reviewed public-health sources. Copy does not diagnose a symptom, prescribe a fixed intake or promise that drinking water treats sedentary risk.
+
+Selection uses the device's local year/month/day as a calendar ordinal, not a UTC date or elapsed 24-hour interval. It stays fixed during a day and cycles every fourteen days, including month/year/leap-day boundaries. The mounted caption uses one timeout to the next local midnight and refreshes on document visibility/window focus; cleanup removes both listeners and the timeout. Calendar-based midnight handles 23/25-hour DST days. There is no fetch, additional permission, persistent tip history or background execution requirement. Reopening after any number of skipped days immediately selects the current date.
+
+Ninety automated checks pass, including local-day stability, month/year/leap-day transitions, fourteen unique consecutive days, Chinese midnight and actual New York DST day lengths. TypeScript passes. Native notification and audio code are unchanged.

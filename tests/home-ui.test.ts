@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { HomeScreen } from "../src/components/prototype/HomeScreen";
 import { Step2Sound } from "../src/components/prototype/Step2Sound";
 import type { ReminderConfig } from "../src/types/reminder";
+import { dailyHealthTip } from "../src/utils/healthTips";
 
 const config: ReminderConfig = {
   mode: "everyday",
@@ -42,6 +43,9 @@ test("a healthy home has only the drink action and settings entry", () => {
   assert.equal((html.match(/<button\b|role="button"/g) || []).length, 2);
   assert.match(html, /aria-label="设置"/);
   assert.match(html, /喝了一杯/);
+  assert.ok(html.includes(dailyHealthTip()));
+  assert.match(html, /aria-label="每日健康小知识"/);
+  assert.doesNotMatch(html, /留一点时间，喝口水/);
 });
 test("editing a sound returns to settings and does not claim to enable paused reminders", () => {
   const html = renderToStaticMarkup(
