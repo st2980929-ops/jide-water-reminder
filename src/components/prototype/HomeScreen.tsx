@@ -52,7 +52,7 @@ export function HomeScreen({
       style={{ color: t.textPrimary }}
     >
       <header className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold tracking-tight">喝水提醒</h1>
+        <h1 className="text-lg font-semibold tracking-tight">记得</h1>
         <button
           aria-label="设置"
           onClick={onOpenSettings}

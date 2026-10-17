@@ -36,7 +36,7 @@ export const LogoSketches: React.FC = () => {
     const subCtrl1 = ((waterNum + 6) * 10).toFixed(0);
     const subCtrl2 = ((waterNum + 8) * 10).toFixed(0);
 
-    return `<!-- 喝水提醒 App 图标 - 瓷白 × 深湖青 (1024x1024) -->
+    return `<!-- 记得 App 图标 - 瓷白 × 深湖青 (1024x1024) -->
 <svg viewBox="0 0 1024 1024" width="1024" height="1024" fill="none" xmlns="http://www.w3.org/2000/svg">
   <!-- 底层独立背景：可根据 iOS Light/Dark/Tinted 分离 -->
   <rect width="1024" height="1024" rx="224" fill="#F6F7F3" />
@@ -390,7 +390,7 @@ export const LogoSketches: React.FC = () => {
             </div>
 
             <div className="mt-4 text-center">
-              <span className="text-xs font-semibold text-[#24332F]">喝水提醒</span>
+              <span className="text-xs font-semibold text-[#24332F]">记得</span>
               <p className="text-[11px] text-[#5B6A63] mt-0.5 font-mono">1024 × 1024 Master Icon</p>
             </div>
           </div>

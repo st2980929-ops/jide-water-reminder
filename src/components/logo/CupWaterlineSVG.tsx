@@ -14,7 +14,7 @@ export interface CupWaterlineSVGProps {
 }
 
 /**
- * 喝水提醒 App 核心 Logo：原创水杯与动态水线
+ * 记得 App 核心 Logo：原创水杯与动态水线
  * 在 remainingGlasses 变化时，通过 CSS transition 属性平滑过渡水位的 clip-path 与 transform，
  * 实现如真实水体沉降般的优雅质感。
  * 适配「瓷白 × 深湖青」视觉体系。

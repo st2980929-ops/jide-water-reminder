@@ -99,7 +99,7 @@ export const NotificationBanner: React.FC<NotificationBannerProps> = ({
               className="text-[12px] font-semibold tracking-tight uppercase"
               style={{ color: t.accent }}
             >
-              喝水提醒
+              记得
             </span>
           </div>
           <div

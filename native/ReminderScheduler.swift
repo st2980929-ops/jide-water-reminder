@@ -52,7 +52,7 @@ actor ReminderScheduler {
     private func requirePermission() async throws {
         let value = await settings()
         guard [.authorized, .provisional, .ephemeral].contains(value.authorizationStatus) else {
-            throw ReminderError.invalid("请先在 iPhone 设置中允许喝水提醒发送通知。")
+            throw ReminderError.invalid("请先在 iPhone 设置中允许「记得」发送通知。")
         }
     }
     private func verifySound(_ sound: String) throws {
@@ -195,7 +195,7 @@ actor ReminderScheduler {
         if !useSystemSound { try verifySound(sound) }
         try await requirePermission()
         guard await settings().soundSetting == .enabled else {
-            throw ReminderError.invalid("系统未允许通知发声，请在 iPhone 设置中开启喝水提醒的声音。")
+            throw ReminderError.invalid("系统未允许通知发声，请在 iPhone 设置中开启「记得」的声音。")
         }
         if let scheduled = await pending().first(where: { $0.identifier == "water.test" })?.nextFireDate,
            scheduled > Date() {

@@ -1,8 +1,8 @@
-# 喝水提醒 · iPhone 测试项目
+# 记得 · iPhone 测试项目
 
 保留你在 AI Studio 中确定的水杯图标、瓷白 × 深湖青主题和六种提示音，把展示样机改成使用 iOS 本地通知的 App。
 
-**当前版本：0.1.1（精简界面与声音排查版）。** 已安装用户在同一工程中重新按 ⌘R 覆盖更新，不要先删除手机上的 App。
+**当前版本：0.1.2（正式命名：记得）。** 已安装用户在同一工程中重新按 ⌘R 覆盖更新，不要先删除手机上的 App。
 
 **第一次安装：请先读 [安装到 iPhone](安装到iPhone.md)。** 压缩包已经附带前端构建结果，首次用 Xcode 安装不需要先运行 npm，也不需要 Gemini API Key。
 
@@ -77,3 +77,7 @@ npm run ios:sync
 - `tests/`、`scripts/`：日程测试、导出与资源完整性检查。
 
 架构与验证记录见 [IMPLEMENTATION.md](IMPLEMENTATION.md)。
+
+## App Store 上架准备
+
+已命名为「记得」，首发以中国大陆为主。账户、备案适用性、隐私支持页面、商店素材与发行验证清单见 [APP_STORE_PREP.md](APP_STORE_PREP.md)，商店文案草稿见 [APP_STORE_COPY.md](APP_STORE_COPY.md)。当前还未提交审核。

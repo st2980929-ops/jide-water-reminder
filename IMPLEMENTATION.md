@@ -67,3 +67,9 @@ This Mac now has Xcode 27.1. A generic iOS target build with CODE_SIGNING_ALLOWE
 - Apple custom notification sounds: https://developer.apple.com/documentation/usernotifications/unnotificationsound
 - Apple developer account limitations: https://developer.apple.com/help/account/basics/about-your-developer-account/
 - Apple required-reason API manifest: https://developer.apple.com/documentation/bundleresources/app-privacy-configuration/nsprivacyaccessedapitypes/nsprivacyaccessedapitypereasons
+
+## Brand rename (0.1.2)
+
+The user chose the display name 记得. Home/header, notification mockups, Info.plist and Capacitor appName now use it. The bundle identifier, target/scheme, persisted storage keys and reminder identifiers are unchanged, preserving the installed app and its local settings. This is a local source update, not an App Store name reservation or release.
+
+Rename verification: the delivered project passed an unsigned generic iOS Release build. The built bundle reports display name 记得, version 0.1.2 build 3 and the unchanged bundle identifier; all twelve sounds and current web resources match the delivery. This is not an App Store distribution validation.
