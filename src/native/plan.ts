@@ -1,21 +1,9 @@
 import type { ReminderConfig } from "../types/reminder";
-import { canonicalSound } from "../utils/sounds";
+import { canonicalSound, SOUNDS } from "../utils/sounds";
 
 // Leave two of iOS's 64 pending requests available for a test and a snooze.
 export const MAX_PLAN_REQUESTS = 62;
 const INTERVALS = [30, 45, 60, 90, 120];
-const SOUNDS = [
-  "celesta",
-  "bamboo",
-  "chime",
-  "raindrop",
-  "singingbowl",
-  "morning",
-  "brook",
-  "ceramic",
-  "drop",
-  "wood",
-];
 
 export interface ReminderRequest {
   id: string;
@@ -93,7 +81,8 @@ export function compilePlan(
   now = new Date(),
 ): NativePlan {
   const slots = daySlots(config);
-  if (!SOUNDS.includes(config.sound)) throw new Error("请选择有效的提示音。");
+  if (!SOUNDS.some((sound) => sound.id === canonicalSound(config.sound)))
+    throw new Error("请选择有效的提示音。");
   if (!["soft", "clear"].includes(config.loudness))
     throw new Error("请选择有效的声音版本。");
   const soundType = canonicalSound(config.sound);

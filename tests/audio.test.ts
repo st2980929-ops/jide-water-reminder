@@ -22,6 +22,10 @@ const SOUNDS: SoundType[] = [
   "morning",
   "brook",
   "ceramic",
+  "shore",
+  "breeze",
+  "birds",
+  "woodland",
 ];
 
 // Digital signal design targets, not speaker SPL or hearing-safety guarantees.
@@ -56,6 +60,8 @@ async function measureSound(sound: SoundType, loudness: LoudnessLevel) {
       firstAudibleSample === -1
         ? 0
         : (lastAudibleSample - firstAudibleSample + 1) / SAMPLE_RATE,
+    onsetRms: Math.sqrt(samples.slice(0, 441).reduce((sum, v) => sum + v * v, 0) / 441),
+    tailRms: Math.sqrt(samples.slice(-882).reduce((sum, v) => sum + v * v, 0) / 882),
   };
 }
 
@@ -85,6 +91,12 @@ for (const sound of SOUNDS) {
           `span ${metrics.audibleSpanSeconds.toFixed(4)}s above -40 dBFS must be >= ${MIN_AUDIBLE_SPAN_SECONDS}s`,
         );
       });
+      if (["brook", "ceramic", "shore", "breeze", "birds", "woodland"].includes(sound)) {
+        await t.test(`${loudness}: gentle onset and fade leave no abrupt edges`, () => {
+          assert.ok(metrics.onsetRms < metrics.rms * 0.1, "first 10ms must fade in");
+          assert.ok(metrics.tailRms < metrics.rms * 0.02, "last 20ms must fade out");
+        });
+      }
     }
     await t.test("clear is louder than soft by at least 2 dB", () => {
       assert.ok(soft.rms < clear.rms, "soft RMS must remain below clear RMS");

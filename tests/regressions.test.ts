@@ -7,6 +7,7 @@ import {
   nextReminder,
 } from "../src/native/plan.ts";
 import type { ReminderConfig } from "../src/types/reminder.ts";
+import { SOUNDS } from "../src/utils/sounds.ts";
 
 const config: ReminderConfig = {
   mode: "everyday",
@@ -28,6 +29,16 @@ const config: ReminderConfig = {
   snoozeUntilTime: null,
   lastDrinkTime: null,
 };
+
+test("every offered tone can be saved as either real notification sound version", () => {
+  for (const { id } of SOUNDS) {
+    for (const loudness of ["soft", "clear"] as const) {
+      const plan = compilePlan({ ...config, sound: id, loudness });
+      assert.equal(plan.sound, `${id}_${loudness}.wav`);
+      assert.ok(plan.requests.length > 0);
+    }
+  }
+});
 
 // Each test restores the process timezone; the tests in this file run sequentially.
 function inTimezone<T>(zone: string, run: () => T): T {

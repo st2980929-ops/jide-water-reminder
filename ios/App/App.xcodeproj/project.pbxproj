@@ -37,6 +37,14 @@
 		7F6ED42C7FFAB0E2AFF0F8D6 /* brook_soft.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0C25FE772217BEED4BD50F41; };
 		5AE2A9BC2BE25A8458CF792E /* ceramic_clear.wav in Resources */ = {isa = PBXBuildFile; fileRef = 5F11369158A9FE89C589AF8D; };
 		21EF1F7F105F5DE4685621F3 /* ceramic_soft.wav in Resources */ = {isa = PBXBuildFile; fileRef = 091A718A83AC834BD1FE6D9A; };
+		29C5C4AB2987EAFF4151ED76 /* birds_clear.wav in Resources */ = {isa = PBXBuildFile; fileRef = 016BF66425DC813DDD4FC041; };
+		CD8A46773AEC1E75B774EFAA /* birds_soft.wav in Resources */ = {isa = PBXBuildFile; fileRef = 57B6FC7644E896DC643B03C8; };
+		821FDDD62A2ED1059720C222 /* breeze_clear.wav in Resources */ = {isa = PBXBuildFile; fileRef = 631670F07BA70D95EB72F830; };
+		76335B4EFDAEA6AF8ADE96A0 /* breeze_soft.wav in Resources */ = {isa = PBXBuildFile; fileRef = 08F8F2B6FCD48FC1EC99715A; };
+		3C96EB84F29445616E852D9A /* shore_clear.wav in Resources */ = {isa = PBXBuildFile; fileRef = 97DFCF7AC6BB54F66776E10A; };
+		7BA90963DF25DB86838E3319 /* shore_soft.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1D6835D6C113476AF1EFA2BA; };
+		BEBE8FBEC9123B0EDD00E0AF /* woodland_clear.wav in Resources */ = {isa = PBXBuildFile; fileRef = 534515DC8366C07FA5D929DC; };
+		20B92D71CC5761C9E818FC5A /* woodland_soft.wav in Resources */ = {isa = PBXBuildFile; fileRef = 9CCE5F90E0C98F39730C047E; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -72,6 +80,14 @@
 		0C25FE772217BEED4BD50F41 /* brook_soft.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = brook_soft.wav; sourceTree = "<group>"; };
 		5F11369158A9FE89C589AF8D /* ceramic_clear.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = ceramic_clear.wav; sourceTree = "<group>"; };
 		091A718A83AC834BD1FE6D9A /* ceramic_soft.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = ceramic_soft.wav; sourceTree = "<group>"; };
+		016BF66425DC813DDD4FC041 /* birds_clear.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = birds_clear.wav; sourceTree = "<group>"; };
+		57B6FC7644E896DC643B03C8 /* birds_soft.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = birds_soft.wav; sourceTree = "<group>"; };
+		631670F07BA70D95EB72F830 /* breeze_clear.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = breeze_clear.wav; sourceTree = "<group>"; };
+		08F8F2B6FCD48FC1EC99715A /* breeze_soft.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = breeze_soft.wav; sourceTree = "<group>"; };
+		97DFCF7AC6BB54F66776E10A /* shore_clear.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = shore_clear.wav; sourceTree = "<group>"; };
+		1D6835D6C113476AF1EFA2BA /* shore_soft.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = shore_soft.wav; sourceTree = "<group>"; };
+		534515DC8366C07FA5D929DC /* woodland_clear.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = woodland_clear.wav; sourceTree = "<group>"; };
+		9CCE5F90E0C98F39730C047E /* woodland_soft.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = woodland_soft.wav; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -153,6 +169,14 @@
 				0C25FE772217BEED4BD50F41 /* brook_soft.wav */,
 				5F11369158A9FE89C589AF8D /* ceramic_clear.wav */,
 				091A718A83AC834BD1FE6D9A /* ceramic_soft.wav */,
+				016BF66425DC813DDD4FC041 /* birds_clear.wav */,
+				57B6FC7644E896DC643B03C8 /* birds_soft.wav */,
+				631670F07BA70D95EB72F830 /* breeze_clear.wav */,
+				08F8F2B6FCD48FC1EC99715A /* breeze_soft.wav */,
+				97DFCF7AC6BB54F66776E10A /* shore_clear.wav */,
+				1D6835D6C113476AF1EFA2BA /* shore_soft.wav */,
+				534515DC8366C07FA5D929DC /* woodland_clear.wav */,
+				9CCE5F90E0C98F39730C047E /* woodland_soft.wav */,
 			);
 			name = Sounds;
 			path = "../../native/sounds";
@@ -246,6 +270,14 @@
 				7F6ED42C7FFAB0E2AFF0F8D6 /* brook_soft.wav in Resources */,
 				5AE2A9BC2BE25A8458CF792E /* ceramic_clear.wav in Resources */,
 				21EF1F7F105F5DE4685621F3 /* ceramic_soft.wav in Resources */,
+				29C5C4AB2987EAFF4151ED76 /* birds_clear.wav in Resources */,
+				CD8A46773AEC1E75B774EFAA /* birds_soft.wav in Resources */,
+				821FDDD62A2ED1059720C222 /* breeze_clear.wav in Resources */,
+				76335B4EFDAEA6AF8ADE96A0 /* breeze_soft.wav in Resources */,
+				3C96EB84F29445616E852D9A /* shore_clear.wav in Resources */,
+				7BA90963DF25DB86838E3319 /* shore_soft.wav in Resources */,
+				BEBE8FBEC9123B0EDD00E0AF /* woodland_clear.wav in Resources */,
+				20B92D71CC5761C9E818FC5A /* woodland_soft.wav in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

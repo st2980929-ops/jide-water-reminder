@@ -8,7 +8,7 @@ struct NativeCoreTests {
         try plan.validate()
         let data = try JSONEncoder().encode(plan)
         try JSONDecoder().decode(ReminderPlan.self, from: data).validate()
-        for name in ["brook", "ceramic"] {
+        for name in ["brook", "ceramic", "shore", "breeze", "birds", "woodland"] {
             for level in ["soft", "clear"] {
                 try ReminderPlan(version: 1, configuration: "{}", sound: "\(name)_\(level).wav", requests: [rule]).validate()
             }

@@ -9,6 +9,10 @@ export type SoundType =
   | 'morning'     // 晨光微弦
   | 'brook'       // 溪涧缓流
   | 'ceramic'     // 陶杯轻触
+  | 'shore'       // 岸边微浪
+  | 'breeze'      // 林间轻风
+  | 'birds'       // 叶间鸟语
+  | 'woodland'    // 木纹回响
   | 'drop' | 'wood'; // 兼容兼容项
 export type LoudnessLevel = 'soft' | 'clear';
 
