@@ -28,7 +28,7 @@ public class WaterNotificationsPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func configure(_ call: CAPPluginCall) {
         guard let json = call.getString("plan") else { call.reject("缺少提醒安排。"); return }
         Task {
-            do { call.resolve(try await ReminderScheduler.shared.configure(json: json)) }
+            do { call.resolve(try await ReminderScheduler.shared.configure(json: json, paused: call.getBool("paused") ?? false)) }
             catch { call.reject(error.localizedDescription) }
         }
     }
@@ -47,14 +47,14 @@ public class WaterNotificationsPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func test(_ call: CAPPluginCall) {
         guard let sound = call.getString("sound") else { call.reject("请选择提示音。"); return }
         Task {
-            do { call.resolve(try await ReminderScheduler.shared.test(sound: sound)) }
+            do { call.resolve(try await ReminderScheduler.shared.test(sound: sound, useSystemSound: call.getBool("useSystemSound") ?? false)) }
             catch { call.reject(error.localizedDescription) }
         }
     }
     @objc func setAppearance(_ call: CAPPluginCall) {
-        let dark = call.getBool("dark") ?? false
+        let appearance = call.getString("appearance") ?? "system"
         DispatchQueue.main.async {
-            self.bridge?.viewController?.overrideUserInterfaceStyle = dark ? .dark : .light
+            self.bridge?.viewController?.overrideUserInterfaceStyle = appearance == "dark" ? .dark : appearance == "light" ? .light : .unspecified
             self.bridge?.viewController?.setNeedsStatusBarAppearanceUpdate()
             call.resolve()
         }

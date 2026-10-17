@@ -1,39 +1,52 @@
-import React, { useState } from 'react';
-import { ReminderConfig } from '../../types/reminder';
-import { generateNaturalSummary, formatTimeMinutes } from '../../utils/scheduleCalculator';
-import { Calendar as CalendarIcon, Clock, Coffee, AlertCircle, ArrowRight, Check } from 'lucide-react';
-import { dateKey } from '../../native/plan';
-import { getThemeTokens } from '../../utils/theme';
+import React, { useState } from "react";
+import { ReminderConfig } from "../../types/reminder";
+import {
+  generateNaturalSummary,
+  formatTimeMinutes,
+} from "../../utils/scheduleCalculator";
+import {
+  Calendar as CalendarIcon,
+  Clock,
+  Coffee,
+  AlertCircle,
+  ArrowRight,
+  ArrowLeft,
+  Check,
+} from "lucide-react";
+import { dateKey } from "../../native/plan";
+import { getThemeTokens } from "../../utils/theme";
 
 interface Step1ScheduleProps {
   config: ReminderConfig;
   onChange: (updated: Partial<ReminderConfig>) => void;
   onNext: () => void;
+  onBack?: () => void;
   isDarkMode?: boolean;
 }
 
 const INTERVAL_OPTIONS = [
-  { label: '30 分钟', value: 30 },
-  { label: '45 分钟', value: 45 },
-  { label: '60 分钟', value: 60 },
-  { label: '90 分钟', value: 90 },
-  { label: '120 分钟', value: 120 },
+  { label: "30 分钟", value: 30 },
+  { label: "45 分钟", value: 45 },
+  { label: "60 分钟", value: 60 },
+  { label: "90 分钟", value: 90 },
+  { label: "120 分钟", value: 120 },
 ];
 
 const WEEKDAYS = [
-  { day: 1, label: '一' },
-  { day: 2, label: '二' },
-  { day: 3, label: '三' },
-  { day: 4, label: '四' },
-  { day: 5, label: '五' },
-  { day: 6, label: '六' },
-  { day: 7, label: '日' },
+  { day: 1, label: "一" },
+  { day: 2, label: "二" },
+  { day: 3, label: "三" },
+  { day: 4, label: "四" },
+  { day: 5, label: "五" },
+  { day: 6, label: "六" },
+  { day: 7, label: "日" },
 ];
 
 export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
   config,
   onChange,
   onNext,
+  onBack,
   isDarkMode = false,
 }) => {
   const t = getThemeTokens(isDarkMode);
@@ -46,12 +59,16 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
 
   const lunchStartMins = formatTimeMinutes(config.lunchStart);
   const lunchEndMins = formatTimeMinutes(config.lunchEnd);
-  const isLunchInvalid = config.hasLunchBreak && lunchStartMins === lunchEndMins;
+  const isLunchInvalid =
+    config.hasLunchBreak && lunchStartMins === lunchEndMins;
 
-  const isWorkdayEmpty = config.mode === 'workday' && config.workdays.length === 0;
-  const isDatesEmpty = config.mode === 'specific_dates' && config.specificDates.length === 0;
+  const isWorkdayEmpty =
+    config.mode === "workday" && config.workdays.length === 0;
+  const isDatesEmpty =
+    config.mode === "specific_dates" && config.specificDates.length === 0;
 
-  const hasValidationError = startMins === endMins || isLunchInvalid || isWorkdayEmpty || isDatesEmpty;
+  const hasValidationError =
+    startMins === endMins || isLunchInvalid || isWorkdayEmpty || isDatesEmpty;
 
   const toggleWeekday = (day: number) => {
     let newDays = [...config.workdays];
@@ -65,7 +82,11 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
 
   // Generate multi-date picker dates for current month + offset
   const today = new Date();
-  const targetMonth = new Date(today.getFullYear(), today.getMonth() + calendarMonthOffset, 1);
+  const targetMonth = new Date(
+    today.getFullYear(),
+    today.getMonth() + calendarMonthOffset,
+    1,
+  );
   const year = targetMonth.getFullYear();
   const month = targetMonth.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -88,6 +109,16 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
       className="flex-1 flex flex-col justify-between px-6 pt-5 pb-6 transition-colors"
       style={{ backgroundColor: t.background, color: t.textPrimary }}
     >
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="min-h-11 inline-flex items-center gap-1 text-sm mb-4"
+          style={{ color: t.accent }}
+        >
+          <ArrowLeft size={17} />
+          返回设置
+        </button>
+      )}
       <div className="space-y-6">
         {/* 顶部标题区 */}
         <div>
@@ -95,7 +126,9 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
             className="text-[12px] font-medium tracking-wide mb-1"
             style={{ color: t.textSecondary }}
           >
-            第 1 步 · 安排提醒
+            {config.hasCompletedSetup
+              ? "设置 · 提醒安排"
+              : "第 1 步 · 安排提醒"}
           </div>
           <h1
             className="text-[26px] font-semibold tracking-tight leading-tight"
@@ -122,12 +155,16 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
 
           <div className="space-y-2">
             {/* 模式 1：每天 */}
-            <button type="button" aria-pressed={config.mode === 'everyday'}
-              onClick={() => onChange({ mode: 'everyday' })}
+            <button
+              type="button"
+              aria-pressed={config.mode === "everyday"}
+              onClick={() => onChange({ mode: "everyday" })}
               className="w-full text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between min-h-[52px]"
               style={{
-                backgroundColor: config.mode === 'everyday' ? t.selectedSoft : t.surface,
-                borderColor: config.mode === 'everyday' ? t.accent : t.separator,
+                backgroundColor:
+                  config.mode === "everyday" ? t.selectedSoft : t.surface,
+                borderColor:
+                  config.mode === "everyday" ? t.accent : t.separator,
               }}
             >
               <div>
@@ -147,22 +184,29 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
               <div
                 className="w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors"
                 style={{
-                  backgroundColor: config.mode === 'everyday' ? t.accent : 'transparent',
-                  borderColor: config.mode === 'everyday' ? t.accent : t.separator,
+                  backgroundColor:
+                    config.mode === "everyday" ? t.accent : "transparent",
+                  borderColor:
+                    config.mode === "everyday" ? t.accent : t.separator,
                   color: t.onAccent,
                 }}
               >
-                {config.mode === 'everyday' && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                {config.mode === "everyday" && (
+                  <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                )}
               </div>
             </button>
 
             {/* 模式 2：工作安排 */}
-            <button type="button" aria-pressed={config.mode === 'workday'}
-              onClick={() => onChange({ mode: 'workday' })}
+            <button
+              type="button"
+              aria-pressed={config.mode === "workday"}
+              onClick={() => onChange({ mode: "workday" })}
               className="w-full text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between min-h-[52px]"
               style={{
-                backgroundColor: config.mode === 'workday' ? t.selectedSoft : t.surface,
-                borderColor: config.mode === 'workday' ? t.accent : t.separator,
+                backgroundColor:
+                  config.mode === "workday" ? t.selectedSoft : t.surface,
+                borderColor: config.mode === "workday" ? t.accent : t.separator,
               }}
             >
               <div>
@@ -182,22 +226,30 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
               <div
                 className="w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors"
                 style={{
-                  backgroundColor: config.mode === 'workday' ? t.accent : 'transparent',
-                  borderColor: config.mode === 'workday' ? t.accent : t.separator,
+                  backgroundColor:
+                    config.mode === "workday" ? t.accent : "transparent",
+                  borderColor:
+                    config.mode === "workday" ? t.accent : t.separator,
                   color: t.onAccent,
                 }}
               >
-                {config.mode === 'workday' && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                {config.mode === "workday" && (
+                  <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                )}
               </div>
             </button>
 
             {/* 模式 3：指定真实日期 */}
-            <button type="button" aria-pressed={config.mode === 'specific_dates'}
-              onClick={() => onChange({ mode: 'specific_dates' })}
+            <button
+              type="button"
+              aria-pressed={config.mode === "specific_dates"}
+              onClick={() => onChange({ mode: "specific_dates" })}
               className="w-full text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between min-h-[52px]"
               style={{
-                backgroundColor: config.mode === 'specific_dates' ? t.selectedSoft : t.surface,
-                borderColor: config.mode === 'specific_dates' ? t.accent : t.separator,
+                backgroundColor:
+                  config.mode === "specific_dates" ? t.selectedSoft : t.surface,
+                borderColor:
+                  config.mode === "specific_dates" ? t.accent : t.separator,
               }}
             >
               <div>
@@ -217,19 +269,23 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
               <div
                 className="w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors"
                 style={{
-                  backgroundColor: config.mode === 'specific_dates' ? t.accent : 'transparent',
-                  borderColor: config.mode === 'specific_dates' ? t.accent : t.separator,
+                  backgroundColor:
+                    config.mode === "specific_dates" ? t.accent : "transparent",
+                  borderColor:
+                    config.mode === "specific_dates" ? t.accent : t.separator,
                   color: t.onAccent,
                 }}
               >
-                {config.mode === 'specific_dates' && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                {config.mode === "specific_dates" && (
+                  <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                )}
               </div>
             </button>
           </div>
         </div>
 
         {/* 展开特定模式的日期选择 */}
-        {config.mode === 'workday' && (
+        {config.mode === "workday" && (
           <div
             className="p-4 rounded-2xl border space-y-3"
             style={{
@@ -287,7 +343,7 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
           </div>
         )}
 
-        {config.mode === 'specific_dates' && (
+        {config.mode === "specific_dates" && (
           <div
             className="p-4 rounded-2xl border space-y-3"
             style={{
@@ -327,7 +383,7 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
 
             {/* 日历网格 */}
             <div className="grid grid-cols-7 gap-1 text-center">
-              {['一', '二', '三', '四', '五', '六', '日'].map((h) => (
+              {["一", "二", "三", "四", "五", "六", "日"].map((h) => (
                 <span
                   key={h}
                   className="text-[10px] font-medium py-1"
@@ -343,7 +399,7 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
 
               {Array.from({ length: daysInMonth }).map((_, i) => {
                 const dayNum = i + 1;
-                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+                const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
                 const isSelected = config.specificDates.includes(dateStr);
 
                 return (
@@ -352,11 +408,11 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
                     type="button"
                     aria-label={dateStr}
                     aria-pressed={isSelected}
-                    disabled={dateStr<dateKey(today)}
+                    disabled={dateStr < dateKey(today)}
                     onClick={() => toggleDate(dateStr)}
                     className="h-11 disabled:opacity-30 rounded-lg text-xs font-mono font-medium transition-colors flex items-center justify-center cursor-pointer"
                     style={{
-                      backgroundColor: isSelected ? t.accent : 'transparent',
+                      backgroundColor: isSelected ? t.accent : "transparent",
                       color: isSelected ? t.onAccent : t.textPrimary,
                     }}
                   >
@@ -375,7 +431,15 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
                 type="button"
                 onClick={() =>
                   onChange({
-                    specificDates: [0,1,2].map(offset=>dateKey(new Date(today.getFullYear(),today.getMonth(),today.getDate()+offset))),
+                    specificDates: [0, 1, 2].map((offset) =>
+                      dateKey(
+                        new Date(
+                          today.getFullYear(),
+                          today.getMonth(),
+                          today.getDate() + offset,
+                        ),
+                      ),
+                    ),
                   })
                 }
                 className="hover:underline font-medium cursor-pointer"
@@ -435,7 +499,10 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
                     borderColor: t.separator,
                   }}
                 >
-                  <Clock className="w-3.5 h-3.5 shrink-0" style={{ color: t.textSecondary }} />
+                  <Clock
+                    className="w-3.5 h-3.5 shrink-0"
+                    style={{ color: t.textSecondary }}
+                  />
                   <input
                     type="time"
                     aria-label="开始时间"
@@ -461,7 +528,10 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
                     borderColor: t.separator,
                   }}
                 >
-                  <Clock className="w-3.5 h-3.5 shrink-0" style={{ color: t.textSecondary }} />
+                  <Clock
+                    className="w-3.5 h-3.5 shrink-0"
+                    style={{ color: t.textSecondary }}
+                  />
                   <input
                     type="time"
                     aria-label="结束时间"
@@ -474,7 +544,11 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
               </div>
             </div>
 
-            {startMins === endMins && <p className="text-xs" style={{color:t.warning}}>开始和结束时间不能相同。</p>}
+            {startMins === endMins && (
+              <p className="text-xs" style={{ color: t.warning }}>
+                开始和结束时间不能相同。
+              </p>
+            )}
 
             {/* 提醒间隔单选按钮组 (映射规则 3: 强选中 accent + on-accent；其他 input + text-secondary) */}
             <div>
@@ -533,7 +607,9 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
                 {/* 44px 触控开关 */}
                 <button
                   type="button"
-                  onClick={() => onChange({ hasLunchBreak: !config.hasLunchBreak })}
+                  onClick={() =>
+                    onChange({ hasLunchBreak: !config.hasLunchBreak })
+                  }
                   className="w-12 h-7 rounded-full transition-colors relative flex items-center px-0.5 min-w-[44px] cursor-pointer"
                   style={{
                     backgroundColor: config.hasLunchBreak ? t.accent : t.input,
@@ -543,10 +619,12 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
                 >
                   <span
                     className={`w-5 h-5 rounded-full shadow-sm transition-transform ${
-                      config.hasLunchBreak ? 'translate-x-5' : 'translate-x-0.5'
+                      config.hasLunchBreak ? "translate-x-5" : "translate-x-0.5"
                     }`}
                     style={{
-                      backgroundColor: config.hasLunchBreak ? t.onAccent : t.surface,
+                      backgroundColor: config.hasLunchBreak
+                        ? t.onAccent
+                        : t.surface,
                     }}
                   />
                 </button>
@@ -626,15 +704,10 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
             color: t.textPrimary,
           }}
         >
-          <span
-            className="font-semibold mr-1.5"
-            style={{ color: t.accent }}
-          >
+          <span className="font-semibold mr-1.5" style={{ color: t.accent }}>
             日程摘要：
           </span>
-          <span style={{ color: t.textPrimary }}>
-            {currentSummary}
-          </span>
+          <span style={{ color: t.textPrimary }}>{currentSummary}</span>
         </div>
 
         {/* 下一步主按钮 (48px 满足 Apple HIG 关键动作规范) */}
@@ -646,10 +719,12 @@ export const Step1Schedule: React.FC<Step1ScheduleProps> = ({
           style={{
             backgroundColor: hasValidationError ? t.input : t.accent,
             color: hasValidationError ? t.textSecondary : t.onAccent,
-            cursor: hasValidationError ? 'not-allowed' : 'pointer',
+            cursor: hasValidationError ? "not-allowed" : "pointer",
           }}
         >
-          <span>下一步：选择声音</span>
+          <span>
+            {config.hasCompletedSetup ? "保存安排" : "下一步：选择声音"}
+          </span>
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>

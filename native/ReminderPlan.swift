@@ -73,3 +73,13 @@ func snoozeTarget(now: Date, nextRegular: Date?) -> Date {
     if let next=nextRegular, next>now, next<=target {return next}
     return target
 }
+
+// Absolute one-off deadlines must not be recomputed from a relative interval when reading status.
+func oneOffComponents(at date: Date) -> DateComponents {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+    var value = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
+    value.calendar = calendar
+    value.timeZone = calendar.timeZone
+    return value
+}

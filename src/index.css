@@ -30,10 +30,10 @@ body {
 
 html, body, #root { min-height:100%; margin:0; }
 body { overscroll-behavior-y:none; }
-button, input { -webkit-tap-highlight-color:transparent; }
+button, input, select, summary { -webkit-tap-highlight-color:transparent; }
 button { cursor:pointer; touch-action:manipulation; }
 button:disabled { cursor:default; opacity:.5; }
-button:focus-visible,[role="button"]:focus-visible { outline:2px solid #2F665E; outline-offset:3px; }
+button:focus-visible,select:focus-visible,summary:focus-visible,[role="button"]:focus-visible { outline:2px solid #2F665E; outline-offset:3px; }
 input[type="time"] { min-width:0; font-size:16px; }
 .app-shell { min-height:100dvh; padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
 .app-content { max-width:480px; margin:0 auto; min-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)); display:flex; flex-direction:column; }

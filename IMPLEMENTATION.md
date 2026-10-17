@@ -16,6 +16,16 @@ At most 62 distinct schedule requests are accepted, reserving capacity for one t
 
 Foreground refreshes carry a generation check so responses started before a mutation cannot overwrite the resulting UI state. Pause is persisted natively and overrides the legacy `isPausedToday` field in UI configuration. Scheduled rules survive normal app termination; they do not rely on a JS timer.
 
+## Simplified UI and sound diagnosis (0.1.1)
+
+A healthy home exposes just the drink-record button and settings entry. Permission or schedule errors add a contextual recovery action. Schedule and sound edits return independently to settings; saving preserves the native pause state. Appearance explicitly passes system/light/dark through the bridge, using UIKit `.unspecified` for system so WebView matchMedia can follow OS changes.
+
+Sound settings use native select fields and one explicit preview button. The diagnostic section compares the selected custom sound and `UNNotificationSound.default` through real lock-screen notifications; tests never replace the saved plan. The native status reports the saved filename, bundle resource availability, actual sound authorization and pending test deadline. An outstanding test blocks the next test to avoid replacing it.
+
+New one-off tests, snoozes and confirmation/error notifications use absolute Gregorian UTC calendar components. Reading an interval trigger's nextTriggerDate produces a date relative to each query, so using it as an absolute pending deadline made the test countdown drift. The fixed calendar deadline is covered by the native trigger regression check.
+
+The user's prior built app contains all twelve byte-identical, non-silent, supported PCM WAV files. No deterministic sound-selection/format defect has been found. The user reports Silent/Focus off, Sounds allowed, alert volume normal, and soft sound selected. The physical vibration-only symptom remains unresolved until custom versus system-default lock-screen tests are heard; this update does not claim it is fixed. Desktop dynamic icons and WidgetKit are deferred.
+
 ## Native actions and lifecycle
 
 AppDelegate installs a retained `UNUserNotificationCenterDelegate` before UI creation. Snooze/pause/resume actions do not use `.foreground`, and execute in Swift even if the web view is not running. SceneDelegate opens the custom bridge controller, which explicitly registers the app-local Capacitor plugin.
@@ -34,19 +44,20 @@ Snooze adds an extra request approximately ten minutes later without shifting al
 ## Validation completed on this Mac
 
 - `npm run lint`: TypeScript check passed.
-- `npm test`: 22 meaningful schedule tests passed. Coverage includes workday selection, breaks overlapping overnight boundaries, month/year rollover, local timezone dates, DST gaps and the 62/63 boundary.
-- `npm run test:native`: compiled and ran Foundation validation/persistence/capacity/snooze checks.
+- `npm test`: 24 schedule/UI regression tests passed. Coverage includes workday selection, breaks overlapping overnight boundaries, month/year rollover, local timezone dates, DST gaps and the 62/63 boundary.
+- `npm run test:native`: compiled and ran Foundation validation/persistence/capacity/snooze checks plus actual UserNotifications absolute trigger checks.
 - Swift syntax parsing passed for all app-local files.
 - Native scheduler typechecked against the installed macOS UserNotifications SDK, using a temporary check copy omitting only iOS's unavailable-on-macOS `.ephemeral` enum case. This found and fixed a base-trigger API mistake. It is partial validation, not an iOS build.
 - `npm run ios:sync`: production Vite build and Capacitor resource synchronization passed.
 - `npm run verify:ios`: four Swift files in target Sources, privacy resource, twelve WAV resources, soft/clear RMS relationship and complete offline web bundle passed.
+- Xcode 27.1 generic iOS unsigned build passed.
 - Xcode project/Info.plist/privacy plist parse checks passed; app icon is opaque-background 1024 × 1024, rendered from the supplied SVG mark.
-- Browser checks at 390 px width: no horizontal overflow, zero observed warning/error logs; scheduling modes, real-date picker, sound choices, preview-only authorization error and dense-plan rejection worked. Native time-field changes were verified using real key events (AX value replacement alone does not dispatch React input events).
+- Browser checks at 320/390/768/1024/1440 px widths: no horizontal overflow, zero observed warning/error logs; scheduling modes, real-date picker, sound choices, preview-only authorization error and dense-plan rejection worked. Native time-field changes were verified using real key events (AX value replacement alone does not dispatch React input events).
 - Production npm dependency audit against the official registry returned zero reported vulnerabilities at verification time.
 
 ## Still required
 
-This Mac has Command Line Tools but no Xcode. No iOS SDK build, simulator run, signing or physical iPhone test has been performed. First device validation must verify plugin loading, real system permission flow, custom sound lookup, notifications while locked and terminated, native actions after cold launch, pause/resume, and notification settings changes. Test low power mode, reboot, DST/timezone travel and long-term repeating behavior before release. Free Personal Team signing expires after seven days; it is a development deployment constraint, not a reason to reopen the app daily.
+This Mac now has Xcode 27.1. A generic iOS target build with CODE_SIGNING_ALLOWED=NO succeeds, using an isolated DerivedData directory. The earlier macOS typecheck was partial validation from before Xcode was installed. The user installed the prior version on a physical iPhone and receives notifications, but reports vibration without the chosen soft sound. The updated build still requires device listening tests, plus validation of native actions after cold launch, pause/resume and settings changes. Test low power mode, reboot, DST/timezone travel and long-term repeating behavior before release. Free Personal Team signing expires after seven days; it is a development deployment constraint, not a reason to reopen the app daily.
 
 ## Sources
 
