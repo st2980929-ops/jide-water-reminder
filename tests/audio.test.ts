@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { OfflineAudioContext } from "node-web-audio-api";
 import { playReminderSound } from "../src/utils/audio";
 import type { LoudnessLevel, SoundType } from "../src/types/reminder";
-import { soundDuration } from "../src/utils/sounds";
+import { soundDuration, SOUNDS as CATALOG } from "../src/utils/sounds";
 
 const SAMPLE_RATE = 44100;
 const AUDIBLE_THRESHOLD = 10 ** (-40 / 20);
@@ -13,20 +13,7 @@ const MIN_RMS: Record<LoudnessLevel, number> = {
   soft: 0.075,
   clear: 0.115,
 };
-const SOUNDS: SoundType[] = [
-  "celesta",
-  "bamboo",
-  "chime",
-  "raindrop",
-  "singingbowl",
-  "morning",
-  "brook",
-  "ceramic",
-  "shore",
-  "breeze",
-  "birds",
-  "woodland",
-];
+const SOUNDS: SoundType[] = CATALOG.map((sound) => sound.id);
 
 // Digital signal design targets, not speaker SPL or hearing-safety guarantees.
 // OfflineAudioContext renders into memory; these tests never open audio output.

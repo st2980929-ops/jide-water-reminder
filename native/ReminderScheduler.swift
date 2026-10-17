@@ -127,7 +127,22 @@ actor ReminderScheduler {
     }
     func status() async -> [String: Any] {
         await acquire(); defer { busy = false }
-        return await snapshot()
+        var notice: String?
+        if let previous = try? storedPlan() {
+            do {
+                if let updated = try previous.replacingRetiredSound() {
+                    if !defaults.bool(forKey: pausedKey) {
+                        try await requirePermission()
+                        try await replace(with: requests(for: updated))
+                    }
+                    defaults.set(try JSONEncoder().encode(updated), forKey: planKey)
+                    notice = "原提示音已移除，已改用清泉水琴。提醒时间保持原样。"
+                }
+            } catch { notice = "原提示音已移除，请在声音设置中重新保存。" }
+        }
+        var value = await snapshot()
+        if let notice = notice { value["soundMigrationNotice"] = notice }
+        return value
     }
     func requestPermission() async throws -> [String: Any] {
         _ = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Bool, Error>) in

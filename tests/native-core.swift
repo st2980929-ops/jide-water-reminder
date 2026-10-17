@@ -8,6 +8,14 @@ struct NativeCoreTests {
         try plan.validate()
         let data = try JSONEncoder().encode(plan)
         try JSONDecoder().decode(ReminderPlan.self, from: data).validate()
+        let retired = ReminderPlan(version: 1, configuration: "{\"sound\":\"shore\",\"startTime\":\"09:00\",\"isPausedToday\":true}", sound: "shore_soft.wav", requests: [rule])
+        let migrated = try retired.replacingRetiredSound()!
+        assert(migrated.sound == "celesta_soft.wav" && migrated.requests.first?.id == rule.id)
+        let migratedConfig = try JSONSerialization.jsonObject(with: Data(migrated.configuration.utf8)) as! [String:Any]
+        assert(migratedConfig["sound"] as? String == "celesta")
+        assert(migratedConfig["startTime"] as? String == "09:00" && migratedConfig["isPausedToday"] as? Bool == true)
+        let unchanged = try plan.replacingRetiredSound()
+        assert(unchanged == nil)
         for name in ["brook", "ceramic", "shore", "breeze", "birds", "woodland"] {
             for level in ["soft", "clear"] {
                 try ReminderPlan(version: 1, configuration: "{}", sound: "\(name)_\(level).wav", requests: [rule]).validate()

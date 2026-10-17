@@ -9,6 +9,7 @@ import {
 } from "./components/prototype/SettingsScreen";
 import { getThemeTokens } from "./utils/theme";
 import { compilePlan, dateKey } from "./native/plan";
+import { canonicalSound } from "./utils/sounds";
 import {
   isIPhoneApp,
   notifications,
@@ -48,6 +49,7 @@ function readLocal(): ReminderConfig {
       return { ...DEFAULT_CONFIG };
     return {
       ...value,
+      sound: canonicalSound(value.sound) as ReminderConfig["sound"],
       remainingGlasses: Number.isFinite(value.remainingGlasses)
         ? Math.max(0, Math.min(8, value.remainingGlasses))
         : 8,
@@ -153,12 +155,14 @@ export default function App() {
         const value = await notifications.status();
         if (!alive || operation.current || startedAt !== generation.current)
           return;
+        if (value.soundMigrationNotice) setMessage(value.soundMigrationNotice);
         if (initial && value.hasPlan) {
           const saved = JSON.parse(value.configuration) as ReminderConfig;
           const local = resetDay(readLocal());
           const loaded = {
             ...DEFAULT_CONFIG,
             ...saved,
+            sound: canonicalSound(saved.sound) as ReminderConfig["sound"],
             remainingGlasses: local.remainingGlasses,
             lastDrinkTime: local.lastDrinkTime,
             drinkDate: local.drinkDate,

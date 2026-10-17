@@ -55,6 +55,19 @@ struct ReminderPlan: Codable {
         ["\(name)_soft.wav","\(name)_clear.wav"]
     })
 
+    // Keep old resources readable until an installed notification queue has migrated.
+    func replacingRetiredSound() throws -> ReminderPlan? {
+        let retired = ["bamboo", "chime", "brook", "shore", "breeze", "birds"]
+        guard retired.contains(where: { sound.hasPrefix($0 + "_") }) else { return nil }
+        guard var config = try JSONSerialization.jsonObject(with: Data(configuration.utf8)) as? [String:Any] else {
+            throw ReminderError.invalid("旧声音设置无法读取，请重新保存声音。")
+        }
+        config["sound"] = "celesta"
+        let updated = try JSONSerialization.data(withJSONObject: config, options: [.sortedKeys])
+        return ReminderPlan(version: version, configuration: String(decoding: updated, as: UTF8.self),
+                            sound: sound.hasSuffix("_clear.wav") ? "celesta_clear.wav" : "celesta_soft.wav", requests: requests)
+    }
+
     func validate() throws {
         guard version==1, !requests.isEmpty, requests.count<=62 else {
             throw ReminderError.invalid("当前安排过密或为空，请调整日期、时段或提醒间隔。")

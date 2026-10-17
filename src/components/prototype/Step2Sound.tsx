@@ -129,15 +129,8 @@ export function Step2Sound({
               className="min-w-0 flex-1 min-h-12 px-3 rounded-xl border text-base"
               style={fieldStyle}
             >
-              {[
-                { label: "自然意象", sounds: SOUNDS.filter((s) => s.family === "nature") },
-                { label: "温润音色", sounds: SOUNDS.filter((s) => s.family !== "nature") },
-              ].map((group) => (
-                <optgroup key={group.label} label={group.label}>
-                  {group.sounds.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </optgroup>
+              {SOUNDS.map((sound) => (
+                <option key={sound.id} value={sound.id}>{sound.name}</option>
               ))}
             </select>
             <button

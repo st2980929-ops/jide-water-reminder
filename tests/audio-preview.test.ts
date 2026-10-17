@@ -96,11 +96,11 @@ async function withSilentAudio(
 
 test("preview recovers when a previously working context was interrupted", async () => {
   await withSilentAudio("running", async (audio, contexts) => {
-    await audio.playReminderSound("brook", "soft");
+    await audio.playReminderSound("ceramic", "soft");
     assert.ok(contexts.some((context) => context.activeSources > 0));
 
     contexts[0].state = "interrupted";
-    await audio.playReminderSound("brook", "soft");
+    await audio.playReminderSound("ceramic", "soft");
     assert.ok(
       contexts.some((context) => context.activeSources > 0),
       "the second preview must restore output after an audio-session interruption",
@@ -110,7 +110,7 @@ test("preview recovers when a previously working context was interrupted", async
 
 test("an asynchronously resumed suspended clock preserves the scheduled preview", async () => {
   await withSilentAudio("suspended", async (audio, contexts) => {
-    await audio.playReminderSound("brook", "soft");
+    await audio.playReminderSound("ceramic", "soft");
     assert.ok(contexts.some((context) => context.activeSources > 0));
   });
 });
@@ -120,7 +120,7 @@ test("a denied resume is reported as failure to the preview caller", async () =>
     let result: unknown;
     let reportedError: unknown;
     try {
-      result = await audio.playReminderSound("brook", "soft");
+      result = await audio.playReminderSound("ceramic", "soft");
     } catch (error) {
       reportedError = error;
     }
