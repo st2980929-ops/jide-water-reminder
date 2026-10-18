@@ -1,10 +1,22 @@
-# 记得 · iPhone 测试项目
+# 记得 · 轻量喝水提醒
 
-保留你在 AI Studio 中确定的水杯图标、瓷白 × 深湖青主题和六种提示音，把展示样机改成使用 iOS 本地通知的 App。
+<img src="ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png" width="96" alt="记得的水杯图标" />
+
+按自己的作息安排好，iPhone 就会提醒你喝口水。瓷白与深湖青主题、轻柔提示音、离线本地通知，无需注册账号，也不必每天打开 App。
+
+## iPhone 下载与安装
+
+**当前提供源码测试版，尚未开放 TestFlight 或 App Store 安装。**
+
+- **有 Mac：**[下载 iPhone 测试工程 ZIP](https://github.com/st2980929-ops/jide-water-reminder/releases/download/v0.3.2-preview.1/Jide-iPhone-test-project-v0.3.2.zip)，解压后按[完整安装教程](安装到iPhone.md)，用 Xcode 和自己的 Apple 账户装到 iPhone。
+- **没有 Mac：**目前没有面向普通用户的一键安装入口；后续 TestFlight / App Store 开放后会在这里更新链接。
+- **开发者：**克隆本仓库后先执行 `npm ci`、`npm run ios:sync`，再打开 `ios/App/App.xcodeproj`。
+
+Releases 附件中的测试工程已附带前端构建资源；GitHub 自动生成的 **Source code (zip)** 需要自行执行前端构建。测试工程 ZIP 不能直接在 iPhone 上安装，使用免费的 Personal Team 签名通常每 7 天需要重新覆盖安装。[查看发布页](https://github.com/st2980929-ops/jide-water-reminder/releases/tag/v0.3.2-preview.1)
 
 **当前版本：0.3.2（构建 8，通知标题更新）。** 已安装用户在同一工程中重新按 ⌘R 覆盖更新，不要先删除手机上的 App。
 
-**第一次安装：请先读 [安装到 iPhone](安装到iPhone.md)。** 压缩包已经附带前端构建结果，首次用 Xcode 安装不需要先运行 npm，也不需要 Gemini API Key。
+**第一次安装：请先读 [安装到 iPhone](安装到iPhone.md)。** 本项目无需 Gemini API Key；请使用自己的 Apple 账户签名，测试工程不包含作者的证书或签名团队配置。
 
 ## 目前具备的功能
 

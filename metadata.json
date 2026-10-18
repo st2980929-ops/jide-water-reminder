@@ -1,7 +1,6 @@
 {
-  "name": "喝水提醒",
-  "description": "面向忙碌人群的轻量 iPhone 喝水提醒 App：包含原创水杯 Logo 提案、设计规范体系与完整状态交互样机。",
+  "name": "记得",
+  "description": "轻量离线 iPhone 喝水提醒：自选作息、本地通知、六种提示音与基础音量、每日健康短语。",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": []
 }
-

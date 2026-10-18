@@ -6,3 +6,11 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Personal Apple signing material and editor state
+*.p12
+*.p8
+*.mobileprovision
+*.xcuserstate
+*.pem
+*.key
